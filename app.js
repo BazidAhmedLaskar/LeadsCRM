@@ -181,7 +181,6 @@ async function loadDatabase() {
     });
     
     renderDB();
-    renderAdmin();
     updateStats();
   } catch (error) {
     console.error('Error loading database:', error);
@@ -189,74 +188,6 @@ async function loadDatabase() {
   }
 }
 
-function buildAdminUserFilter() {
-  const userFilterEl = document.getElementById('adminUserFilter');
-  if (!userFilterEl) return;
-
-  const userMap = new Map();
-  allLeads.forEach(l => {
-    if (!userMap.has(l.createdBy)) {
-      userMap.set(l.createdBy, l.createdByName || l.createdBy);
-    }
-  });
-
-  const current = userFilterEl.value;
-  userFilterEl.innerHTML = '<option value="">All Users</option>';
-
-  userMap.forEach((name, uid) => {
-    const option = document.createElement('option');
-    option.value = uid;
-    option.textContent = `${name}`;
-    if (uid === current) option.selected = true;
-    userFilterEl.appendChild(option);
-  });
-}
-
-function renderAdmin() {
-  const container = document.getElementById('adminResults');
-  if (!container) return;
-
-  buildAdminUserFilter();
-
-  const userFilter = document.getElementById('adminUserFilter')?.value || '';
-  const statusFilter = document.getElementById('adminStatusFilter')?.value || 'Called';
-
-  const filtered = allLeads.filter(lead => {
-    const userMatch = !userFilter || lead.createdBy === userFilter;
-    const statusMatch = !statusFilter || (lead.status === statusFilter || lead.response === statusFilter);
-    return userMatch && statusMatch;
-  });
-
-  if (!filtered.length) {
-    container.innerHTML = '<div class="empty-state"><div class="icon">📋</div><h3>No records found</h3><p>Try another filter or add leads.</p></div>';
-    return;
-  }
-
-  container.innerHTML = filtered.map(lead => {
-    const createdAtDate = lead.createdAt?.seconds ? new Date(lead.createdAt.seconds * 1000) : new Date(lead.createdAt || Date.now());
-    const createdAtStr = !isNaN(createdAtDate.getTime()) ? createdAtDate.toLocaleString() : '—';
-
-    return `
-    <div class="card">
-      <div class="card-top">
-        <div>
-          <div class="shop-name">${lead.name}</div>
-          <div class="shop-address">${lead.phone} • status: ${lead.status}</div>
-          <div class="shop-address">Created by: ${lead.createdByName || lead.createdBy} • ${createdAtStr}</div>
-          <div class="shop-address">Response: ${lead.response || lead.status}</div>
-          ${lead.notes ? `<div class="meta-row"><span>📝 ${lead.notes}</span></div>` : ''}
-        </div>
-        <div class="badge badge-${(lead.response || lead.status).toLowerCase().replace(/\s+/g, '')}">${lead.response || lead.status}</div>
-      </div>
-      <div class="card-actions">
-        <button class="btn btn-green" onclick="updateStatus('${lead.id}', 'Called')">Called</button>
-        <button class="btn btn-orange" onclick="updateStatus('${lead.id}', 'Follow Up')">Follow Up</button>
-        <button class="btn btn-red" onclick="updateStatus('${lead.id}', 'Not Interested')">Not Interested</button>
-        <button class="btn btn-blue" onclick="updateStatus('${lead.id}', 'Sent Demo')">Sent Demo</button>
-      </div>
-    </div>
-  `).join('');
-}
 
 
 function buildUserFilter() {
