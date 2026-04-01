@@ -72,6 +72,9 @@ auth.onAuthStateChanged(async (user) => {
   // In production, check approval status first
   showScreen('appScreen');
   
+  // Admin detection
+  isAdmin = user.email === 'ahmedlaskarbazid@gmail.com';
+
   // Update user info in header
   const userName = document.getElementById('userName');
   const userAvatar = document.getElementById('userAvatar');
@@ -116,8 +119,7 @@ function toggleManualForm() {
     // Clear form
     document.getElementById('mName').value = '';
     document.getElementById('mPhone').value = '';
-    document.getElementById('mCity').value = '';
-    document.getElementById('mAddress').value = '';
+    document.getElementById('mStatus').value = 'Not Called';
     document.getElementById('mNotes').value = '';
   }
 }
@@ -130,8 +132,7 @@ async function addManually() {
 
   const name = document.getElementById('mName').value.trim();
   const phone = document.getElementById('mPhone').value.trim();
-  const city = document.getElementById('mCity').value.trim();
-  const address = document.getElementById('mAddress').value.trim();
+  const status = document.getElementById('mStatus').value;
   const notes = document.getElementById('mNotes').value.trim();
 
   if (!name || !phone) {
@@ -140,13 +141,11 @@ async function addManually() {
   }
 
   try {
-    const docRef = await addDoc(collection(db, 'leads'), {
+    await addDoc(collection(db, 'leads'), {
       name,
       phone,
-      city,
-      address,
+      status,
       notes,
-      status: 'Not Called',
       createdAt: new Date(),
       createdBy: auth.currentUser.uid
     });
@@ -165,25 +164,35 @@ async function addManually() {
 // ═════════════════════════════
 
 let allLeads = [];
+let isAdmin = false;
 
 async function loadDatabase() {
+  if (!auth.currentUser) {
+    showToast('Please login first', 'var(--red)');
+    return;
+  }
+
   try {
-    const q = query(collection(db, 'leads'), orderBy('createdAt', 'desc'));
+    const q = isAdmin
+      ? query(collection(db, 'leads'), orderBy('createdAt', 'desc'))
+      : query(
+          collection(db, 'leads'),
+          where('createdBy', '==', auth.currentUser.uid),
+          orderBy('createdAt', 'desc')
+        );
+
     const querySnapshot = await getDocs(q);
     
     allLeads = [];
     querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      if (data.createdBy === auth.currentUser.uid) {
-        allLeads.push({ id: doc.id, ...data });
-      }
+      allLeads.push({ id: doc.id, ...doc.data() });
     });
     
     renderDB();
     updateStats();
   } catch (error) {
     console.error('Error loading database:', error);
-    showToast('Failed to load database', 'var(--red)');
+    showToast('Failed to load database: ' + error.message, 'var(--red)');
   }
 }
 

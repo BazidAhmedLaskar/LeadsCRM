@@ -184,14 +184,18 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
       <button class="btn btn-ghost" onclick="toggleManualForm()" style="font-size:.79rem;padding:8px 13px">➕ Add Manually</button>
     </div>
     <div class="add-form" id="manualForm">
-      <div class="form-title">Add Shop Manually</div>
+      <div class="form-title">Add Lead Manually</div>
       <div class="form-row">
-        <input class="form-input" id="mName" placeholder="Shop Name *">
+        <input class="form-input" id="mName" placeholder="Lead Name *">
         <input class="form-input" id="mPhone" placeholder="Phone Number *" type="tel">
       </div>
       <div class="form-row">
-        <input class="form-input" id="mCity" placeholder="City / Area">
-        <input class="form-input" id="mAddress" placeholder="Full Address">
+        <select class="form-input" id="mStatus">
+          <option value="Not Called">Not Called</option>
+          <option value="Called">Called</option>
+          <option value="Follow Up">Follow Up</option>
+        </select>
+        <div></div>
       </div>
       <textarea class="notes-area" id="mNotes" placeholder="Notes (optional)"></textarea>
       <div style="display:flex;gap:8px;margin-top:4px">
