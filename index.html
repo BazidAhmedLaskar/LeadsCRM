@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script type="module" src="firebase-config.js"></script>
+<script type="module" src="app.js"></script>
 <style>
 :root{
   --bg:#060b18;--surface:#0d1526;--surface2:#131d34;--border:#1e2d4d;
@@ -188,7 +189,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <div class="login-card">
     <div class="login-logo">Lead<span>CRM</span></div>
     <div class="login-tagline">Shop calling &amp; lead management<br>for your sales team</div>
-    <button class="google-btn" onclick="signInWithGoogle()">
+    <button class="google-btn" id="googleSignInBtn">
       <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
         <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
@@ -210,7 +211,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
       <div class="pending-title">Waiting for Approval</div>
       <div class="pending-sub">Your account has been submitted. An admin needs to approve you before you can use LeadCRM.<br><br>Contact your team admin.</div>
       <div class="user-pill" id="pendingPill"><span id="pendingEmail">—</span></div>
-      <button class="btn btn-ghost" onclick="signOut()" style="width:100%">Sign Out</button>
+      <button class="btn btn-ghost" id="pendingSignoutBtn" style="width:100%">Sign Out</button>
     </div>
   </div>
 </div>
@@ -225,7 +226,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
         <img id="userAvatar" src="" alt="">
         <span id="userName">—</span>
       </div>
-      <button class="signout-btn" onclick="signOut()">Sign Out</button>
+      <button class="signout-btn" id="headerSignoutBtn">Sign Out</button>
     </div>
   </header>
 
