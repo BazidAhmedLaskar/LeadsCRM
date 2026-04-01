@@ -163,12 +163,15 @@ let allLeads = [];
 
 async function loadDatabase() {
   try {
-    const q = query(collection(db, 'leads'), where('createdBy', '==', auth.currentUser.uid), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'leads'), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     
     allLeads = [];
     querySnapshot.forEach((doc) => {
-      allLeads.push({ id: doc.id, ...doc.data() });
+      const data = doc.data();
+      if (data.createdBy === auth.currentUser.uid) {
+        allLeads.push({ id: doc.id, ...data });
+      }
     });
     
     renderDB();
