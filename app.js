@@ -123,6 +123,11 @@ function toggleManualForm() {
 }
 
 async function addManually() {
+  if (!auth.currentUser) {
+    showToast('Please log in first', 'var(--red)');
+    return;
+  }
+
   const name = document.getElementById('mName').value.trim();
   const phone = document.getElementById('mPhone').value.trim();
   const city = document.getElementById('mCity').value.trim();
@@ -151,7 +156,7 @@ async function addManually() {
     loadDatabase(); // Refresh database view
   } catch (error) {
     console.error('Error adding lead:', error);
-    showToast('Failed to add lead', 'var(--red)');
+    showToast('Failed to add lead: ' + error.message, 'var(--red)');
   }
 }
 
