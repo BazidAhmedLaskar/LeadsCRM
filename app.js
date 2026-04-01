@@ -189,12 +189,72 @@ async function loadDatabase() {
     });
     
     renderDB();
+    renderAdmin();
     updateStats();
   } catch (error) {
     console.error('Error loading database:', error);
     showToast('Failed to load database: ' + error.message, 'var(--red)');
   }
 }
+
+function buildAdminUserFilter() {
+  const userFilterEl = document.getElementById('adminUserFilter');
+  if (!userFilterEl) return;
+
+  const users = [...new Set(allLeads.map(l => l.createdBy))];
+  const current = userFilterEl.value;
+  userFilterEl.innerHTML = '<option value="">All Users</option>';
+
+  users.forEach(uid => {
+    const option = document.createElement('option');
+    option.value = uid;
+    option.textContent = uid;
+    if (uid === current) option.selected = true;
+    userFilterEl.appendChild(option);
+  });
+}
+
+function renderAdmin() {
+  const container = document.getElementById('adminResults');
+  if (!container) return;
+
+  buildAdminUserFilter();
+
+  const userFilter = document.getElementById('adminUserFilter')?.value || '';
+  const statusFilter = document.getElementById('adminStatusFilter')?.value || 'Called';
+
+  const filtered = allLeads.filter(lead => {
+    const userMatch = !userFilter || lead.createdBy === userFilter;
+    const statusMatch = !statusFilter || lead.status === statusFilter;
+    return userMatch && statusMatch;
+  });
+
+  if (!filtered.length) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📋</div><h3>No records found</h3><p>Try another filter or add leads.</p></div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(lead => `
+    <div class="card">
+      <div class="card-top">
+        <div>
+          <div class="shop-name">${lead.name}</div>
+          <div class="shop-address">${lead.phone} • status: ${lead.status}</div>
+          <div class="shop-address">Created by: ${lead.createdBy}</div>
+          ${lead.notes ? `<div class="meta-row"><span>📝 ${lead.notes}</span></div>` : ''}
+        </div>
+        <div class="badge badge-${lead.status.toLowerCase().replace(/\s/g, '')}">${lead.status}</div>
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-green" onclick="updateStatus('${lead.id}', 'Called')">Called</button>
+        <button class="btn btn-orange" onclick="updateStatus('${lead.id}', 'Follow Up')">Follow Up</button>
+        <button class="btn btn-red" onclick="updateStatus('${lead.id}', 'Not Interested')">Not Interested</button>
+        <button class="btn btn-blue" onclick="updateStatus('${lead.id}', 'Sent Demo')">Sent Demo</button>
+      </div>
+    </div>
+  `).join('');
+}
+
 
 function renderDB() {
   const searchTerm = document.getElementById('dbSearch').value.toLowerCase();
@@ -307,6 +367,12 @@ function switchTab(tabName) {
   
   pages.forEach(page => {
     const isActive = page.id === `page-${tabName}`;
+    if (tabName === 'admin' && !isAdmin) {
+      showToast('Admin access required', 'var(--orange)');
+      page.classList.remove('active');
+      document.getElementById('page-database')?.classList.add('active');
+      return;
+    }
     page.classList.toggle('active', isActive);
   });
 }

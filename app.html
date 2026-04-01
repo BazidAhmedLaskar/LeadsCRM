@@ -176,6 +176,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <div class="tabs" id="appTabs">
     <div class="tab active" onclick="switchTab('search')">➕ Add Leads</div>
     <div class="tab" onclick="switchTab('database')">📋 Database</div>
+    <div class="tab tab-admin" onclick="switchTab('admin')">🛠️ Admin</div>
   </div>
 
   <!-- SEARCH TAB -->
@@ -225,6 +226,25 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
       <button class="btn btn-ghost" onclick="loadDatabase()" style="padding:8px 13px;font-size:.79rem">↺ Refresh</button>
     </div>
     <div id="dbResults" class="cards"><div class="loading">Loading…</div></div>
+  </div>
+
+  <!-- ADMIN TAB -->
+  <div class="page" id="page-admin">
+    <div class="section-title">Admin Filters</div>
+    <div class="db-filters">
+      <select class="filter-select" id="adminUserFilter" onchange="renderAdmin()">
+        <option value="">All Users</option>
+      </select>
+      <select class="filter-select" id="adminStatusFilter" onchange="renderAdmin()">
+        <option value="Called" selected>Called</option>
+        <option value="Not Called">Not Called</option>
+        <option value="Follow Up">Follow Up</option>
+        <option value="Not Interested">Not Interested</option>
+        <option value="Sent Demo">Sent Demo</option>
+      </select>
+      <button class="btn btn-ghost" onclick="renderAdmin()" style="padding:8px 13px;font-size:.79rem">↺ Apply</button>
+    </div>
+    <div id="adminResults" class="cards"><div class="loading">Loading…</div></div>
   </div>
 
 </div>
