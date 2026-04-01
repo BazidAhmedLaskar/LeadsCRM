@@ -240,10 +240,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
     <div class="setup-banner" id="configBanner">
       ⚠️ <div>Maps API key not configured. Add <code>YOUR_GOOGLE_MAPS_API_KEY</code> in CONFIG. You can still add shops manually.</div>
     </div>
-    <div class="search-wrap">
-      <input class="search-input" id="searchInput" placeholder="e.g.  PVC furniture shops in Akola" onkeydown="if(event.key==='Enter')doSearch()">
-      <button class="btn btn-primary" onclick="doSearch()">🔍 Search</button>
-    </div>
     <div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <button class="btn btn-ghost" onclick="toggleManualForm()" style="font-size:.79rem;padding:8px 13px">➕ Add Manually</button>
       <span id="searchCount" style="font-size:.79rem;color:var(--text-muted)"></span>
@@ -258,6 +254,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
         <input class="form-input" id="mCity" placeholder="City / Area">
         <input class="form-input" id="mAddress" placeholder="Full Address">
       </div>
+      <textarea class="notes-area" id="mNotes" placeholder="Notes (optional)"></textarea>
       <div style="display:flex;gap:8px;margin-top:4px">
         <button class="btn btn-primary" onclick="addManually()">💾 Save to Database</button>
         <button class="btn btn-ghost" onclick="toggleManualForm()">Cancel</button>
