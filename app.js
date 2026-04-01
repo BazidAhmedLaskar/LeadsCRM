@@ -163,7 +163,7 @@ let allLeads = [];
 
 async function loadDatabase() {
   try {
-    const q = query(collection(db, 'leads'), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'leads'), where('createdBy', '==', auth.currentUser.uid), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     
     allLeads = [];
@@ -208,7 +208,7 @@ function renderDB() {
           <div class="shop-name">${lead.name}</div>
           <div class="shop-address">${lead.city || '—'} • ${lead.address || '—'}</div>
           <div class="shop-phone">${lead.phone}</div>
-          ${lead.notes ? `<div class="meta-row"><span>📝 ${lead.notes}</span></div>` : ''}
+          <div class="meta-row"><span>📝 <span id="notes-${lead.id}">${lead.notes || 'No notes'}</span></span> <button class="btn btn-blue" onclick="editNotes('${lead.id}')" style="font-size:.7rem;padding:2px 8px;margin-left:8px;">Edit</button></div>
         </div>
         <div class="badge badge-${lead.status.toLowerCase().replace(' ', '')}">${lead.status}</div>
       </div>
@@ -257,6 +257,23 @@ async function deleteLead(id) {
   }
 }
 
+async function editNotes(id) {
+  const notesSpan = document.getElementById(`notes-${id}`);
+  const currentNotes = notesSpan.textContent === 'No notes' ? '' : notesSpan.textContent;
+  
+  const newNotes = prompt('Edit notes:', currentNotes);
+  if (newNotes === null) return; // Cancelled
+  
+  try {
+    await updateDoc(doc(db, 'leads', id), { notes: newNotes.trim() });
+    showToast('Notes updated', 'var(--green)');
+    loadDatabase();
+  } catch (error) {
+    console.error('Error updating notes:', error);
+    showToast('Failed to update notes', 'var(--red)');
+  }
+}
+
 function switchTab(tabName) {
   const tabs = document.querySelectorAll('.tab');
   const pages = document.querySelectorAll('.page');
@@ -289,5 +306,6 @@ window.loadDatabase = loadDatabase;
 window.renderDB = renderDB;
 window.updateStatus = updateStatus;
 window.deleteLead = deleteLead;
+window.editNotes = editNotes;
 
 console.log('✅ App initialized');

@@ -237,12 +237,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 
   <!-- SEARCH TAB -->
   <div class="page active" id="page-search">
-    <div class="setup-banner" id="configBanner">
-      ⚠️ <div>Maps API key not configured. Add <code>YOUR_GOOGLE_MAPS_API_KEY</code> in CONFIG. You can still add shops manually.</div>
-    </div>
     <div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <button class="btn btn-ghost" onclick="toggleManualForm()" style="font-size:.79rem;padding:8px 13px">➕ Add Manually</button>
-      <span id="searchCount" style="font-size:.79rem;color:var(--text-muted)"></span>
     </div>
     <div class="add-form" id="manualForm">
       <div class="form-title">Add Shop Manually</div>
