@@ -72,9 +72,6 @@ auth.onAuthStateChanged(async (user) => {
   // In production, check approval status first
   showScreen('appScreen');
   
-  // Admin detection
-  isAdmin = user.email === 'ahmedlaskarbazid@gmail.com';
-
   // Update user info in header
   const userName = document.getElementById('userName');
   const userAvatar = document.getElementById('userAvatar');
@@ -119,7 +116,7 @@ function toggleManualForm() {
     // Clear form
     document.getElementById('mName').value = '';
     document.getElementById('mPhone').value = '';
-    document.getElementById('mStatus').value = 'Not Called';
+    document.getElementById('mResponse').value = 'Not Called';
     document.getElementById('mNotes').value = '';
   }
 }
@@ -132,7 +129,7 @@ async function addManually() {
 
   const name = document.getElementById('mName').value.trim();
   const phone = document.getElementById('mPhone').value.trim();
-  const status = document.getElementById('mStatus').value;
+  const response = document.getElementById('mResponse').value;
   const notes = document.getElementById('mNotes').value.trim();
 
   if (!name || !phone) {
@@ -144,10 +141,12 @@ async function addManually() {
     await addDoc(collection(db, 'leads'), {
       name,
       phone,
-      status,
+      status: response,
+      response,
       notes,
       createdAt: new Date(),
-      createdBy: auth.currentUser.uid
+      createdBy: auth.currentUser.uid,
+      createdByName: auth.currentUser.displayName || auth.currentUser.email || auth.currentUser.uid
     });
 
     showToast('Lead added successfully', 'var(--green)');
@@ -164,7 +163,6 @@ async function addManually() {
 // ═════════════════════════════
 
 let allLeads = [];
-let isAdmin = false;
 
 async function loadDatabase() {
   if (!auth.currentUser) {
@@ -173,13 +171,7 @@ async function loadDatabase() {
   }
 
   try {
-    const q = isAdmin
-      ? query(collection(db, 'leads'), orderBy('createdAt', 'desc'))
-      : query(
-          collection(db, 'leads'),
-          where('createdBy', '==', auth.currentUser.uid),
-          orderBy('createdAt', 'desc')
-        );
+    const q = query(collection(db, 'leads'), orderBy('createdAt', 'desc'));
 
     const querySnapshot = await getDocs(q);
     
@@ -201,14 +193,20 @@ function buildAdminUserFilter() {
   const userFilterEl = document.getElementById('adminUserFilter');
   if (!userFilterEl) return;
 
-  const users = [...new Set(allLeads.map(l => l.createdBy))];
+  const userMap = new Map();
+  allLeads.forEach(l => {
+    if (!userMap.has(l.createdBy)) {
+      userMap.set(l.createdBy, l.createdByName || l.createdBy);
+    }
+  });
+
   const current = userFilterEl.value;
   userFilterEl.innerHTML = '<option value="">All Users</option>';
 
-  users.forEach(uid => {
+  userMap.forEach((name, uid) => {
     const option = document.createElement('option');
     option.value = uid;
-    option.textContent = uid;
+    option.textContent = `${name}`;
     if (uid === current) option.selected = true;
     userFilterEl.appendChild(option);
   });
@@ -225,7 +223,7 @@ function renderAdmin() {
 
   const filtered = allLeads.filter(lead => {
     const userMatch = !userFilter || lead.createdBy === userFilter;
-    const statusMatch = !statusFilter || lead.status === statusFilter;
+    const statusMatch = !statusFilter || (lead.status === statusFilter || lead.response === statusFilter);
     return userMatch && statusMatch;
   });
 
@@ -240,10 +238,11 @@ function renderAdmin() {
         <div>
           <div class="shop-name">${lead.name}</div>
           <div class="shop-address">${lead.phone} • status: ${lead.status}</div>
-          <div class="shop-address">Created by: ${lead.createdBy}</div>
+          <div class="shop-address">Created by: ${lead.createdByName || lead.createdBy}</div>
+          <div class="shop-address">Response: ${lead.response || lead.status}</div>
           ${lead.notes ? `<div class="meta-row"><span>📝 ${lead.notes}</span></div>` : ''}
         </div>
-        <div class="badge badge-${lead.status.toLowerCase().replace(/\s/g, '')}">${lead.status}</div>
+        <div class="badge badge-${(lead.response || lead.status).toLowerCase().replace(/\s+/g, '')}">${lead.response || lead.status}</div>
       </div>
       <div class="card-actions">
         <button class="btn btn-green" onclick="updateStatus('${lead.id}', 'Called')">Called</button>
@@ -256,19 +255,40 @@ function renderAdmin() {
 }
 
 
+function buildUserFilter() {
+  const userEl = document.getElementById('dbUser');
+  if (!userEl) return;
+
+  const current = userEl.value;
+  const userMap = new Map();
+  allLeads.forEach(l => {
+    if (!userMap.has(l.createdBy)) {
+      userMap.set(l.createdBy, l.createdByName || l.createdBy);
+    }
+  });
+
+  userEl.innerHTML = '<option value="">All Users</option>';
+  userMap.forEach((name, uid) => {
+    const opt = document.createElement('option');
+    opt.value = uid;
+    opt.textContent = `${name}`;
+    if (uid === current) opt.selected = true;
+    userEl.appendChild(opt);
+  });
+}
+
 function renderDB() {
+  buildUserFilter();
   const searchTerm = document.getElementById('dbSearch').value.toLowerCase();
+  const userFilter = document.getElementById('dbUser').value;
   const statusFilter = document.getElementById('dbStatus').value;
   
   const filtered = allLeads.filter(lead => {
-    const matchesSearch = !searchTerm || 
-      lead.name.toLowerCase().includes(searchTerm) ||
-      lead.city.toLowerCase().includes(searchTerm) ||
-      lead.phone.includes(searchTerm);
-    
+    const matchesSearch = !searchTerm || lead.name.toLowerCase().includes(searchTerm);
+    const matchesUser = !userFilter || lead.createdBy === userFilter;
     const matchesStatus = !statusFilter || lead.status === statusFilter;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesUser && matchesStatus;
   });
   
   const container = document.getElementById('dbResults');
@@ -278,46 +298,100 @@ function renderDB() {
     return;
   }
   
-  container.innerHTML = filtered.map(lead => `
+  container.innerHTML = filtered.map(lead => {
+    const createdAtDate = lead.createdAt?.seconds ? new Date(lead.createdAt.seconds * 1000) : new Date(lead.createdAt || Date.now());
+    const createdAtStr = !isNaN(createdAtDate.getTime()) ? createdAtDate.toLocaleString() : '—';
+
+    return `
     <div class="card">
       <div class="card-top">
         <div>
           <div class="shop-name">${lead.name}</div>
-          <div class="shop-address">${lead.city || '—'} • ${lead.address || '—'}</div>
-          <div class="shop-phone">${lead.phone}</div>
-          <div class="meta-row"><span>📝 <span id="notes-${lead.id}">${lead.notes || 'No notes'}</span></span> <button class="btn btn-blue" onclick="editNotes('${lead.id}')" style="font-size:.7rem;padding:2px 8px;margin-left:8px;">Edit</button></div>
+          <div class="shop-address">${lead.phone} • ${lead.status}</div>
+          <div class="shop-address">Created by: ${lead.createdByName || lead.createdBy} • ${createdAtStr}</div>
+          <div class="shop-address">Response: ${lead.response || lead.status}</div>
+          ${lead.notes ? `<div class="meta-row"><span>📝 ${lead.notes}</span></div>` : '<div class="meta-row"><span>📝 No notes</span></div>'}
         </div>
-        <div class="badge badge-${lead.status.toLowerCase().replace(' ', '')}">${lead.status}</div>
+        <div class="badge badge-${lead.status.toLowerCase().replace(/\s+/g, '')}">${lead.status}</div>
       </div>
       <div class="card-actions">
         <button class="btn btn-green" onclick="updateStatus('${lead.id}', 'Called')">✅ Called</button>
         <button class="btn btn-orange" onclick="updateStatus('${lead.id}', 'Follow Up')">⏰ Follow Up</button>
-        <button class="btn btn-red" onclick="deleteLead('${lead.id}')">🗑️ Delete</button>
+        <button class="btn btn-red" onclick="updateStatus('${lead.id}', 'Not Interested')">🚫 Not Interested</button>
+        <button class="btn btn-blue" onclick="updateStatus('${lead.id}', 'Sent Demo')">📧 Sent Demo</button>
+        <button class="btn btn-ghost" onclick="deleteLead('${lead.id}')">🗑️ Delete</button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function updateStats() {
   const total = allLeads.length;
-  const called = allLeads.filter(l => l.status === 'Called').length;
-  const pending = allLeads.filter(l => l.status === 'Not Called').length;
-  const followup = allLeads.filter(l => l.status === 'Follow Up').length;
-  
+  const called = allLeads.filter(l => (l.response || l.status) === 'Called').length;
+  const pending = allLeads.filter(l => (l.response || l.status) === 'Not Called').length;
+  const followup = allLeads.filter(l => (l.response || l.status) === 'Follow Up').length;
+  const notPicked = allLeads.filter(l => (l.response || l.status) === 'Not Picked Call').length;
+  const notInterested = allLeads.filter(l => (l.response || l.status) === 'Not Interested').length;
+  const sentDemo = allLeads.filter(l => (l.response || l.status) === 'Sent Demo').length;
+
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const calledToday = allLeads.filter(l => {
+    if (l.status !== 'Called') return false;
+    const createdAtDate = l.createdAt?.seconds ? new Date(l.createdAt.seconds * 1000) : new Date(l.createdAt || 0);
+    return createdAtDate >= startOfDay;
+  }).length;
+
   document.getElementById('statTotal').textContent = total;
   document.getElementById('statCalled').textContent = called;
   document.getElementById('statPending').textContent = pending;
   document.getElementById('statFollowup').textContent = followup;
+
+  // Inject additional stats if they are missing
+  const statsEl = document.querySelector('.stats');
+  const extraStats = [
+    { id: 'statNotPicked', label: 'Not Picked' },
+    { id: 'statNotInterested', label: 'Not Interested' },
+    { id: 'statSentDemo', label: 'Sent Demo' },
+    { id: 'statCalledToday', label: 'Called Today' }
+  ];
+
+  extraStats.forEach(({ id, label }) => {
+    if (!document.getElementById(id) && statsEl) {
+      const extra = document.createElement('div');
+      extra.className = 'stat-box';
+      extra.innerHTML = `<div class="stat-num" id="${id}">0</div><div class="stat-label">${label}</div>`;
+      statsEl.appendChild(extra);
+    }
+  });
+
+  document.getElementById('statNotPicked').textContent = notPicked;
+  document.getElementById('statNotInterested').textContent = notInterested;
+  document.getElementById('statSentDemo').textContent = sentDemo;
+
+  let calledTodayEl = document.getElementById('statCalledToday');
+  if (!calledTodayEl) {
+    const statsEl = document.querySelector('.stats');
+    if (statsEl) {
+      const extra = document.createElement('div');
+      extra.className = 'stat-box';
+      extra.innerHTML = `<div class=\"stat-num\" id=\"statCalledToday\">${calledToday}</div><div class=\"stat-label\">Called Today</div>`;
+      statsEl.appendChild(extra);
+      calledTodayEl = document.getElementById('statCalledToday');
+    }
+  }
+  if (calledTodayEl) calledTodayEl.textContent = calledToday;
 }
 
 async function updateStatus(id, status) {
   try {
-    await updateDoc(doc(db, 'leads', id), { status });
-    showToast(`Status updated to ${status}`, 'var(--green)');
+    await updateDoc(doc(db, 'leads', id), { status, response: status });
+    showToast(`Response updated to ${status}`, 'var(--green)');
     loadDatabase();
   } catch (error) {
     console.error('Error updating status:', error);
-    showToast('Failed to update status', 'var(--red)');
+    showToast('Failed to update response', 'var(--red)');
   }
 }
 
@@ -367,12 +441,6 @@ function switchTab(tabName) {
   
   pages.forEach(page => {
     const isActive = page.id === `page-${tabName}`;
-    if (tabName === 'admin' && !isAdmin) {
-      showToast('Admin access required', 'var(--orange)');
-      page.classList.remove('active');
-      document.getElementById('page-database')?.classList.add('active');
-      return;
-    }
     page.classList.toggle('active', isActive);
   });
 }

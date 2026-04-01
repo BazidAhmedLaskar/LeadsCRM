@@ -86,6 +86,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .badge-followup{background:rgba(245,158,11,.1);color:var(--orange);}
 .badge-admin{background:rgba(168,85,247,.12);color:var(--purple);}
 .badge-pending{background:rgba(245,158,11,.1);color:var(--orange);}
+.badge-notpickedcall{background:rgba(248,113,113,.12);color:var(--orange);}
+.badge-notinterested{background:rgba(239,68,68,.1);color:var(--red);}
+.badge-sentdemo{background:rgba(59,130,246,.12);color:var(--accent);}
 
 /* FILTERS */
 .db-filters{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
@@ -94,8 +97,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .filter-input{cursor:text;flex:1;min-width:160px;}
 
 /* STATS */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px;}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:22px;}
 .stat-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+
 .stat-num{font-family:'Syne',sans-serif;font-weight:800;font-size:1.8rem;color:var(--accent);line-height:1;}
 .stat-label{font-size:.68rem;color:var(--text-muted);margin-top:4px;text-transform:uppercase;letter-spacing:.8px;font-weight:600;}
 
@@ -191,7 +195,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
         <input class="form-input" id="mPhone" placeholder="Phone Number *" type="tel">
       </div>
       <div class="form-row">
-        <select class="form-input" id="mStatus">
+        <select class="form-input" id="mResponse">
           <option value="Not Called">Not Called</option>
           <option value="Called">Called</option>
           <option value="Follow Up">Follow Up</option>
@@ -219,12 +223,18 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
       <div class="stat-box"><div class="stat-num" id="statFollowup" style="color:var(--orange)">—</div><div class="stat-label">Follow Up</div></div>
     </div>
     <div class="db-filters">
-      <input class="filter-input" id="dbSearch" placeholder="🔍 Search name, city, phone…" oninput="renderDB()">
+      <input class="filter-input" id="dbSearch" placeholder="🔍 Search by name…" oninput="renderDB()">
+      <select class="filter-select" id="dbUser" onchange="renderDB()">
+        <option value="">All Users</option>
+      </select>
       <select class="filter-select" id="dbStatus" onchange="renderDB()">
         <option value="">All Status</option>
         <option value="Not Called">Not Called</option>
         <option value="Called">Called</option>
         <option value="Follow Up">Follow Up</option>
+        <option value="Not Picked Call">Not Picked Call</option>
+        <option value="Not Interested">Not Interested</option>
+        <option value="Sent Demo">Sent Demo</option>
       </select>
       <button class="btn btn-ghost" onclick="loadDatabase()" style="padding:8px 13px;font-size:.79rem">↺ Refresh</button>
     </div>
@@ -239,6 +249,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
         <option value="">All Users</option>
       </select>
       <select class="filter-select" id="adminStatusFilter" onchange="renderAdmin()">
+        <option value="">All Status</option>
         <option value="Called">Called</option>
         <option value="Not Called">Not Called</option>
         <option value="Follow Up">Follow Up</option>
