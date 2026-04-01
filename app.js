@@ -232,13 +232,17 @@ function renderAdmin() {
     return;
   }
 
-  container.innerHTML = filtered.map(lead => `
+  container.innerHTML = filtered.map(lead => {
+    const createdAtDate = lead.createdAt?.seconds ? new Date(lead.createdAt.seconds * 1000) : new Date(lead.createdAt || Date.now());
+    const createdAtStr = !isNaN(createdAtDate.getTime()) ? createdAtDate.toLocaleString() : '—';
+
+    return `
     <div class="card">
       <div class="card-top">
         <div>
           <div class="shop-name">${lead.name}</div>
           <div class="shop-address">${lead.phone} • status: ${lead.status}</div>
-          <div class="shop-address">Created by: ${lead.createdByName || lead.createdBy}</div>
+          <div class="shop-address">Created by: ${lead.createdByName || lead.createdBy} • ${createdAtStr}</div>
           <div class="shop-address">Response: ${lead.response || lead.status}</div>
           ${lead.notes ? `<div class="meta-row"><span>📝 ${lead.notes}</span></div>` : ''}
         </div>
@@ -286,7 +290,7 @@ function renderDB() {
   const filtered = allLeads.filter(lead => {
     const matchesSearch = !searchTerm || lead.name.toLowerCase().includes(searchTerm);
     const matchesUser = !userFilter || lead.createdBy === userFilter;
-    const matchesStatus = !statusFilter || lead.status === statusFilter;
+    const matchesStatus = !statusFilter || (lead.status === statusFilter || lead.response === statusFilter);
     
     return matchesSearch && matchesUser && matchesStatus;
   });
