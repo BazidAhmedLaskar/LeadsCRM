@@ -137,6 +137,14 @@ async function addManually() {
     return;
   }
 
+  // Check for duplicate phone number
+  const existingLead = allLeads.find(lead => lead.phone === phone);
+  if (existingLead) {
+    const status = existingLead.response || existingLead.status;
+    showToast(`${existingLead.name} has already been called (${status})`, 'var(--orange)');
+    return;
+  }
+
   try {
     await addDoc(collection(db, 'leads'), {
       name,
