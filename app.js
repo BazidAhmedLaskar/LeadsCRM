@@ -102,6 +102,24 @@ function formatWhatsAppLink(phone) {
   return `https://wa.me/${full}`;
 }
 
+function formatMailtoLink(lead) {
+  const email = encodeURIComponent(lead.email || '');
+  const subject = encodeURIComponent(`Fameo — Influencer & Brand Collaboration (${lead.name || 'Campaign Brief'})`);
+  const body = encodeURIComponent(
+    `Hi ${lead.name || 'there'},\n\nReaching out from Fameo (Guwahati · Pan India).\n\nBest,\nFameo Team\nfameomedia@gmail.com`
+  );
+  return `mailto:${email}?subject=${subject}&body=${body}`;
+}
+
+function formatHandleLink(handle) {
+  const raw = String(handle || '').trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (raw.startsWith('@')) return `https://instagram.com/${raw.slice(1)}`;
+  if (raw.includes('.')) return `https://${raw}`;
+  return `https://instagram.com/${raw}`;
+}
+
 function statusClass(status) {
   return String(status || 'Not Called').toLowerCase().replace(/\s+/g, '');
 }
@@ -127,7 +145,7 @@ function showToast(msg, color = 'var(--ink)') {
 // ═════════════════════════════
 
 function clearManualForm() {
-  const ids = ['mName', 'mPhone', 'mCity', 'mHandle', 'mNotes'];
+  const ids = ['mName', 'mPhone', 'mEmail', 'mCity', 'mHandle', 'mNotes'];
   ids.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -136,6 +154,10 @@ function clearManualForm() {
   if (resp) resp.value = 'Not Called';
   const type = document.getElementById('mType');
   if (type) type.value = 'Brand';
+  const cat = document.getElementById('mCategory');
+  if (cat) cat.value = '';
+  const budget = document.getElementById('mBudget');
+  if (budget) budget.value = '';
 }
 
 function toggleManualForm() {
@@ -157,36 +179,53 @@ async function addManually() {
 
   const name = document.getElementById('mName')?.value.trim() || '';
   const phone = document.getElementById('mPhone')?.value.trim() || '';
+  const email = document.getElementById('mEmail')?.value.trim() || '';
   const response = document.getElementById('mResponse')?.value || 'Not Called';
   const notes = document.getElementById('mNotes')?.value.trim() || '';
   const leadType = document.getElementById('mType')?.value || '';
+  const category = document.getElementById('mCategory')?.value || '';
+  const budget = document.getElementById('mBudget')?.value || '';
   const city = document.getElementById('mCity')?.value.trim() || '';
   const handle = document.getElementById('mHandle')?.value.trim() || '';
 
-  if (!name || !phone) {
-    showToast('Lead name and phone number are required', 'var(--red)');
+  if (!name || (!phone && !email)) {
+    showToast('Name and at least a phone number or email are required', 'var(--red)');
     return;
   }
 
-  const normalizedNew = normalizePhone(phone);
-  const existingLead = allLeads.find(lead => {
-    const existingNorm = normalizePhone(lead.phone);
-    if (normalizedNew.length >= 6 && existingNorm.length >= 6) {
-      return existingNorm === normalizedNew || existingNorm.endsWith(normalizedNew) || normalizedNew.endsWith(existingNorm);
-    }
-    return (lead.phone || '').trim() === phone;
-  });
+  if (phone) {
+    const normalizedNew = normalizePhone(phone);
+    const existingByPhone = allLeads.find(lead => {
+      if (!lead.phone) return false;
+      const existingNorm = normalizePhone(lead.phone);
+      if (normalizedNew.length >= 6 && existingNorm.length >= 6) {
+        return existingNorm === normalizedNew || existingNorm.endsWith(normalizedNew) || normalizedNew.endsWith(existingNorm);
+      }
+      return (lead.phone || '').trim() === phone;
+    });
 
-  if (existingLead) {
-    const status = existingLead.response || existingLead.status || 'Not Called';
-    showToast(`${existingLead.name} is already in roster (${status})`, 'var(--orange)');
-    return;
+    if (existingByPhone) {
+      const status = existingByPhone.response || existingByPhone.status || 'Not Called';
+      showToast(`${existingByPhone.name} is already in roster (${status})`, 'var(--orange)');
+      return;
+    }
+  }
+
+  if (email) {
+    const normalizedEmail = email.toLowerCase();
+    const existingByEmail = allLeads.find(lead => (lead.email || '').trim().toLowerCase() === normalizedEmail);
+    if (existingByEmail) {
+      const status = existingByEmail.response || existingByEmail.status || 'Not Called';
+      showToast(`${existingByEmail.name} already uses that email (${status})`, 'var(--orange)');
+      return;
+    }
   }
 
   try {
     const payload = {
       name,
       phone,
+      email,
       status: response,
       response,
       notes,
@@ -195,6 +234,8 @@ async function addManually() {
       createdByName: auth.currentUser.displayName || auth.currentUser.email || auth.currentUser.uid
     };
     if (leadType) payload.leadType = leadType;
+    if (category) payload.category = category;
+    if (budget) payload.budget = budget;
     if (city) payload.city = city;
     if (handle) payload.handle = handle;
 
@@ -279,11 +320,12 @@ function renderRecentAdds() {
       </div>
       ${recent.map((lead) => {
         const status = lead.response || lead.status || 'Not Called';
+        const subParts = [lead.phone, lead.email, lead.city, lead.leadType].filter(Boolean).map(escapeHtml);
         return `
           <div class="recent-row">
             <div>
               <div class="recent-name">${escapeHtml(lead.name)}</div>
-              <div class="recent-sub">${escapeHtml(lead.phone)}${lead.city ? ' · ' + escapeHtml(lead.city) : ''}${lead.leadType ? ' · ' + escapeHtml(lead.leadType) : ''}</div>
+              <div class="recent-sub">${subParts.join(' · ') || '—'}</div>
             </div>
             <span class="badge badge-${statusClass(status)}">${escapeHtml(status)}</span>
           </div>
@@ -317,11 +359,14 @@ function renderDB() {
   const filtered = allLeads.filter(lead => {
     const haystack = [
       lead.name,
+      lead.email,
       lead.phone,
       lead.notes,
       lead.city,
       lead.handle,
-      lead.leadType
+      lead.leadType,
+      lead.category,
+      lead.budget
     ].filter(Boolean).join(' ').toLowerCase();
 
     const matchesSearch = !searchTerm || haystack.includes(searchTerm);
@@ -354,7 +399,9 @@ function renderDB() {
     const status = lead.response || lead.status || 'Not Called';
     const indexStr = String(idx + 1).padStart(2, '0');
     const safeId = escapeHtml(lead.id);
-    const safePhone = escapeHtml(lead.phone);
+    const safePhone = escapeHtml(lead.phone || '');
+    const safeEmail = escapeHtml(lead.email || '');
+    const handleHref = formatHandleLink(lead.handle);
 
     return `
       <article class="card">
@@ -363,14 +410,22 @@ function renderDB() {
             <div class="card-index-row">
               <span class="card-idx">${indexStr}</span>
               ${lead.leadType ? `<span class="chip">${escapeHtml(lead.leadType)}</span>` : ''}
+              ${lead.category ? `<span class="chip">${escapeHtml(lead.category)}</span>` : ''}
+              ${lead.budget ? `<span class="chip">${escapeHtml(lead.budget)}</span>` : ''}
               ${lead.city ? `<span class="chip">${escapeHtml(lead.city)}</span>` : ''}
-              ${lead.handle ? `<span class="chip">${escapeHtml(lead.handle)}</span>` : ''}
+              ${lead.handle ? `<a class="chip" href="${escapeHtml(handleHref)}" target="_blank" rel="noopener" style="text-decoration:none;">${escapeHtml(lead.handle)} ↗</a>` : ''}
             </div>
             <h3 class="shop-name">${escapeHtml(lead.name)}</h3>
             <div class="contact-row">
-              <a class="shop-phone" href="tel:${safePhone}">📞 ${safePhone}</a>
-              <button class="mini-link" type="button" onclick="copyPhone('${safePhone}')">Copy</button>
-              <a class="mini-link" href="${formatWhatsAppLink(lead.phone)}" target="_blank" rel="noopener">WhatsApp ↗</a>
+              ${lead.phone ? `
+                <a class="shop-phone" href="tel:${safePhone}">📞 ${safePhone}</a>
+                <button class="mini-link" type="button" onclick="copyText('${safePhone}', 'phone')">Copy</button>
+                <a class="mini-link" href="${formatWhatsAppLink(lead.phone)}" target="_blank" rel="noopener">WhatsApp ↗</a>
+              ` : ''}
+              ${lead.email ? `
+                <a class="shop-email" href="${formatMailtoLink(lead)}">✉ ${safeEmail}</a>
+                <button class="mini-link" type="button" onclick="copyText('${safeEmail}', 'email')">Copy</button>
+              ` : ''}
             </div>
             <div class="shop-meta">
               Added by <strong>${escapeHtml(lead.createdByName || lead.createdBy || 'Team')}</strong> · ${escapeHtml(createdAtStr)}
@@ -381,7 +436,10 @@ function renderDB() {
 
         <div class="notes-box">
           <span class="notes-text ${lead.notes ? '' : 'notes-empty'}" id="notes-${safeId}">${lead.notes ? escapeHtml(lead.notes) : 'No notes yet'}</span>
-          <button class="mini-link" type="button" onclick="toggleNotesEditor('${safeId}')">✎ Edit</button>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button class="mini-link" type="button" onclick="toggleNotesEditor('${safeId}')">✎ Notes</button>
+            <button class="mini-link" type="button" onclick="toggleLeadEditor('${safeId}')">✎ Details</button>
+          </div>
         </div>
 
         <div class="notes-editor" id="notes-editor-${safeId}">
@@ -392,12 +450,54 @@ function renderDB() {
           </div>
         </div>
 
+        <div class="edit-lead-panel" id="lead-editor-${safeId}">
+          <div class="edit-lead-grid">
+            <div class="field-group">
+              <label class="field-label">Name</label>
+              <input class="form-input" id="edit-name-${safeId}" value="${escapeHtml(lead.name || '')}">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Phone / WhatsApp</label>
+              <input class="form-input" id="edit-phone-${safeId}" value="${safePhone}">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Email Address</label>
+              <input class="form-input" id="edit-email-${safeId}" type="email" value="${safeEmail}" placeholder="team@brand.com">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Instagram / Website</label>
+              <input class="form-input" id="edit-handle-${safeId}" value="${escapeHtml(lead.handle || '')}" placeholder="@handle or website.com">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Category / Niche</label>
+              <input class="form-input" id="edit-category-${safeId}" value="${escapeHtml(lead.category || '')}" placeholder="e.g. Skincare, Fashion">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Budget</label>
+              <input class="form-input" id="edit-budget-${safeId}" value="${escapeHtml(lead.budget || '')}" placeholder="e.g. ₹1,00,000 – ₹3,00,000">
+            </div>
+            <div class="field-group">
+              <label class="field-label">City / Market</label>
+              <input class="form-input" id="edit-city-${safeId}" value="${escapeHtml(lead.city || '')}" placeholder="Guwahati, Mumbai…">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Lead Type</label>
+              <input class="form-input" id="edit-type-${safeId}" value="${escapeHtml(lead.leadType || '')}" placeholder="Brand / Creator">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" type="button" onclick="saveLeadDetails('${safeId}')">Save Details ↗</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="toggleLeadEditor('${safeId}')">Cancel</button>
+          </div>
+        </div>
+
         <div class="card-actions">
           <button class="btn btn-green btn-sm" type="button" onclick="updateStatus('${safeId}', 'Called')">✓ Called</button>
           <button class="btn btn-orange btn-sm" type="button" onclick="updateStatus('${safeId}', 'Follow Up')">◷ Follow Up</button>
           <button class="btn btn-stone btn-sm" type="button" onclick="updateStatus('${safeId}', 'Not Picked Call')">✕ Not Picked</button>
           <button class="btn btn-red btn-sm" type="button" onclick="updateStatus('${safeId}', 'Not Interested')">⊘ Not Interested</button>
           <button class="btn btn-blue btn-sm" type="button" onclick="updateStatus('${safeId}', 'Sent Demo')">↗ Sent Demo</button>
+          ${lead.email ? `<a class="btn btn-ghost btn-sm" href="${formatMailtoLink(lead)}">✉ Email ↗</a>` : ''}
           <span class="card-actions-spacer"></span>
           <button class="btn btn-ghost btn-sm" type="button" onclick="deleteLead('${safeId}')">Delete</button>
         </div>
@@ -502,13 +602,60 @@ async function editNotes(id) {
   }
 }
 
-async function copyPhone(phone) {
-  try {
-    await navigator.clipboard.writeText(phone);
-    showToast(`Copied ${phone}`, 'var(--ink)');
-  } catch {
-    showToast('Could not copy phone number', 'var(--orange)');
+function toggleLeadEditor(id) {
+  const editor = document.getElementById(`lead-editor-${id}`);
+  if (!editor) return;
+  editor.classList.toggle('open');
+  if (editor.classList.contains('open')) {
+    document.getElementById(`edit-email-${id}`)?.focus();
   }
+}
+
+async function saveLeadDetails(id) {
+  const name = document.getElementById(`edit-name-${id}`)?.value.trim() || '';
+  const phone = document.getElementById(`edit-phone-${id}`)?.value.trim() || '';
+  const email = document.getElementById(`edit-email-${id}`)?.value.trim() || '';
+  const handle = document.getElementById(`edit-handle-${id}`)?.value.trim() || '';
+  const category = document.getElementById(`edit-category-${id}`)?.value.trim() || '';
+  const budget = document.getElementById(`edit-budget-${id}`)?.value.trim() || '';
+  const city = document.getElementById(`edit-city-${id}`)?.value.trim() || '';
+  const leadType = document.getElementById(`edit-type-${id}`)?.value.trim() || '';
+
+  if (!name || (!phone && !email)) {
+    showToast('Name and phone or email are required', 'var(--red)');
+    return;
+  }
+
+  try {
+    await updateDoc(doc(db, 'leads', id), {
+      name,
+      phone,
+      email,
+      handle,
+      category,
+      budget,
+      city,
+      leadType
+    });
+    showToast('Lead details updated', 'var(--green)');
+    loadDatabase();
+  } catch (error) {
+    console.error('Error updating lead details:', error);
+    showToast('Failed to update lead details', 'var(--red)');
+  }
+}
+
+async function copyText(value, label = 'value') {
+  try {
+    await navigator.clipboard.writeText(value);
+    showToast(`Copied ${value}`, 'var(--ink)');
+  } catch {
+    showToast(`Could not copy ${label}`, 'var(--orange)');
+  }
+}
+
+async function copyPhone(phone) {
+  return copyText(phone, 'phone number');
 }
 
 function exportCSV() {
@@ -517,7 +664,7 @@ function exportCSV() {
     return;
   }
 
-  const headers = ['Name', 'Phone', 'Type', 'City', 'Handle', 'Status', 'Notes', 'Added By', 'Created At'];
+  const headers = ['Name', 'Phone', 'Email', 'Type', 'Category', 'Budget', 'City', 'Handle', 'Status', 'Notes', 'Added By', 'Created At'];
   const csvCell = (val) => `"${String(val ?? '').replace(/"/g, '""')}"`;
 
   const rows = allLeads.map(l => {
@@ -526,7 +673,10 @@ function exportCSV() {
     return [
       l.name,
       l.phone,
+      l.email || '',
       l.leadType || '',
+      l.category || '',
+      l.budget || '',
       l.city || '',
       l.handle || '',
       l.response || l.status || '',
@@ -580,7 +730,10 @@ window.updateStatus = updateStatus;
 window.deleteLead = deleteLead;
 window.toggleNotesEditor = toggleNotesEditor;
 window.saveInlineNotes = saveInlineNotes;
+window.toggleLeadEditor = toggleLeadEditor;
+window.saveLeadDetails = saveLeadDetails;
 window.editNotes = editNotes;
+window.copyText = copyText;
 window.copyPhone = copyPhone;
 window.exportCSV = exportCSV;
 
