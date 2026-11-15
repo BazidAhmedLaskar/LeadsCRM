@@ -3,228 +3,199 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LeadCRM - Dashboard</title>
+<title>Fameo CRM — Lead Pipeline</title>
+<link rel="icon" type="image/svg+xml" href="https://fameomedia.vercel.app/img/fameo-logo.svg?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="fameo-theme.css">
 <script type="module" src="firebase-config.js"></script>
 <script type="module" src="app.js"></script>
-<style>
-:root{
-  --bg:#060b18;--surface:#0d1526;--surface2:#131d34;--border:#1e2d4d;
-  --accent:#3b82f6;--accent-dim:rgba(59,130,246,0.15);
-  --green:#22c55e;--green-dim:rgba(34,197,94,0.15);
-  --red:#ef4444;--orange:#f59e0b;--purple:#a855f7;
-  --text:#e2e8f0;--text-muted:#64748b;--text-dim:#94a3b8;
-}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
-.screen{display:none;}.screen.active{display:block;}
-
-/* HEADER */
-#appHeader{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:100;}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;color:var(--accent);letter-spacing:-.5px;}
-.logo span{color:var(--text-muted);font-weight:400;}
-.header-right{display:flex;align-items:center;gap:10px;}
-.avatar-btn{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px 5px 5px;cursor:default;font-size:.8rem;color:var(--text-dim);}
-.avatar-btn img{width:26px;height:26px;border-radius:50%;}
-.signout-btn{font-size:.78rem;padding:7px 13px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
-.signout-btn:hover{border-color:var(--red);color:var(--red);}
-
-/* TABS */
-.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;overflow-x:auto;scrollbar-width:none;}
-.tabs::-webkit-scrollbar{display:none;}
-.tab{padding:13px 20px;font-size:.85rem;font-weight:600;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;user-select:none;}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
-.tab:hover:not(.active){color:var(--text-dim);}
-.tab-admin{color:var(--purple)!important;}
-.tab-admin.active{border-bottom-color:var(--purple)!important;}
-
-/* PAGES */
-.page{display:none;padding:26px 24px;max-width:980px;margin:0 auto;}
-.page.active{display:block;}
-
-/* BUTTONS */
-.btn{padding:10px 15px;border-radius:10px;border:none;font-size:.82rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .18s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
-.btn:disabled{opacity:.45;cursor:not-allowed;}
-.btn-primary{background:var(--accent);color:white;}
-.btn-primary:hover:not(:disabled){background:#2563eb;transform:translateY(-1px);}
-.btn-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,.3);}
-.btn-green:hover:not(:disabled){background:rgba(34,197,94,.25);}
-.btn-blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(59,130,246,.3);}
-.btn-blue:hover:not(:disabled){background:rgba(59,130,246,.25);}
-.btn-ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border);}
-.btn-ghost:hover{border-color:var(--text-dim);color:var(--text);}
-.btn-red{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2);}
-.btn-red:hover{background:rgba(239,68,68,.2);}
-.btn-orange{background:rgba(245,158,11,.1);color:var(--orange);border:1px solid rgba(245,158,11,.25);}
-.btn-orange:hover{background:rgba(245,158,11,.2);}
-.btn-purple{background:rgba(168,85,247,.12);color:var(--purple);border:1px solid rgba(168,85,247,.25);}
-.btn-purple:hover{background:rgba(168,85,247,.22);}
-
-/* SEARCH */
-.search-wrap{display:flex;gap:10px;margin-bottom:16px;}
-.search-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 18px;font-size:.95rem;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;}
-.search-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.1);}
-.search-input::placeholder{color:var(--text-muted);}
-
-/* CARDS */
-.cards{display:flex;flex-direction:column;gap:12px;}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;transition:border-color .2s;animation:fadeUp .22s ease both;}
-.card:hover{border-color:rgba(59,130,246,.35);}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
-.shop-name{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:4px;}
-.shop-address{font-size:.78rem;color:var(--text-muted);line-height:1.5;}
-.shop-phone{font-family:'DM Mono',monospace;font-size:.85rem;color:var(--green);margin-top:5px;}
-.rating{font-size:.73rem;color:var(--orange);margin-top:3px;}
-.card-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center;}
-
-/* BADGES */
-.badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:.7rem;font-weight:700;font-family:'DM Mono',sans-serif;white-space:nowrap;}
-.badge-called{background:var(--green-dim);color:var(--green);}
-.badge-notcalled{background:rgba(239,68,68,.1);color:var(--red);}
-.badge-followup{background:rgba(245,158,11,.1);color:var(--orange);}
-.badge-admin{background:rgba(168,85,247,.12);color:var(--purple);}
-.badge-pending{background:rgba(245,158,11,.1);color:var(--orange);}
-.badge-notpickedcall{background:rgba(248,113,113,.12);color:var(--orange);}
-.badge-notinterested{background:rgba(239,68,68,.1);color:var(--red);}
-.badge-sentdemo{background:rgba(59,130,246,.12);color:var(--accent);}
-
-/* FILTERS */
-.db-filters{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
-.filter-select,.filter-input{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-size:.82rem;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;cursor:pointer;}
-.filter-select:focus,.filter-input:focus{border-color:var(--accent);}
-.filter-input{cursor:text;flex:1;min-width:160px;}
-
-/* STATS */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:22px;}
-.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
-
-.stat-num{font-family:'Syne',sans-serif;font-weight:800;font-size:1.8rem;color:var(--accent);line-height:1;}
-.stat-label{font-size:.68rem;color:var(--text-muted);margin-top:4px;text-transform:uppercase;letter-spacing:.8px;font-weight:600;}
-
-/* META */
-.meta-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:.74rem;color:var(--text-muted);}
-.meta-row span{display:flex;align-items:center;gap:4px;}
-
-/* NOTES */
-.notes-area{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:.82rem;color:var(--text);font-family:'DM Sans',sans-serif;resize:vertical;min-height:54px;outline:none;margin-top:12px;transition:border-color .2s;}
-.notes-area:focus{border-color:var(--accent);}
-
-/* FORM */
-.add-form{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;display:none;}
-.add-form.open{display:block;animation:fadeUp .2s ease;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
-.form-input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:.85rem;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;width:100%;transition:border-color .2s;}
-.form-input:focus{border-color:var(--accent);}
-.form-input::placeholder{color:var(--text-muted);}
-.form-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.92rem;margin-bottom:14px;color:var(--text-dim);}
-
-/* ADMIN */
-.section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;color:var(--text-dim);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
-.member-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:14px;animation:fadeUp .2s ease both;}
-.member-card img{width:40px;height:40px;border-radius:50%;flex-shrink:0;border:2px solid var(--border);}
-.member-info{flex:1;min-width:0;}
-.member-name{font-weight:600;font-size:.9rem;}
-.member-email{font-size:.75rem;color:var(--text-muted);margin-top:2px;font-family:'DM Mono',monospace;}
-.member-stat{font-size:.74rem;color:var(--text-dim);margin-top:4px;}
-.perf-table{width:100%;border-collapse:collapse;font-size:.83rem;}
-.perf-table th{background:var(--surface2);color:var(--text-muted);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);}
-.perf-table td{padding:12px 14px;border-bottom:1px solid rgba(30,45,77,.6);color:var(--text-dim);vertical-align:middle;}
-.perf-table tr:last-child td{border-bottom:none;}
-.perf-table tr:hover td{background:rgba(59,130,246,.03);}
-.perf-bar-wrap{display:flex;align-items:center;gap:8px;}
-.perf-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
-.perf-bar-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1);}
-
-/* MISC */
-.empty-state{text-align:center;padding:56px 20px;color:var(--text-muted);}
-.empty-state .icon{font-size:3rem;margin-bottom:14px;}
-.empty-state h3{font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:6px;color:var(--text-dim);}
-.empty-state p{font-size:.83rem;}
-.loading{text-align:center;padding:48px;color:var(--text-muted);font-size:.88rem;}
-.toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:white;padding:12px 22px;border-radius:10px;font-size:.875rem;font-weight:600;z-index:9999;transform:translateY(100px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;max-width:320px;}
-.toast.show{transform:translateY(0);opacity:1;}
-.setup-banner{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:13px 18px;margin-bottom:20px;font-size:.82rem;color:var(--orange);display:none;align-items:flex-start;gap:10px;line-height:1.5;}
-#map{display:none;height:1px;}
-
-@media(max-width:600px){
-  .page{padding:14px;}
-  .stats{grid-template-columns:repeat(2,1fr);}
-  .form-row{grid-template-columns:1fr;}
-  .btn{padding:8px 11px;font-size:.77rem;}
-  .login-card{padding:36px 22px;}
-  .member-card{flex-wrap:wrap;}
-}
-</style>
 </head>
 <body>
 
-<div id="map"></div>
+<div id="map" style="display:none;height:1px;"></div>
 <div class="toast" id="toast"></div>
+
+<div class="studio-strip">
+  <span>Fameo · Influencer Marketing Agency</span>
+  <span class="hide-mobile">Guwahati, Assam · 26.14° N · Northeast → Pan India</span>
+  <a href="https://fameomedia.vercel.app/" target="_blank" rel="noopener">Agency site ↗</a>
+</div>
 
 <!-- ══ APP SCREEN ══ -->
 <div id="appScreen" class="screen active">
 
   <header id="appHeader">
-    <div class="logo">Lead<span>CRM</span></div>
+    <a href="#" class="fameo-logo" onclick="switchTab('search'); return false;" aria-label="Fameo CRM">
+      <img
+        class="fameo-brand-logo"
+        src="https://fameomedia.vercel.app/img/fameo-logo.svg?v=2"
+        alt="Fameo — influencer marketing agency, Guwahati, Assam"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"
+      >
+      <span class="fameo-logo-fallback">
+        <svg class="fameo-logo-mark" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="1" y="1" width="34" height="34" rx="9" fill="#141413"/>
+          <path d="M13 26V13.8C13 11.4 14.5 10 17.1 10H23.2" stroke="#FAF8F3" stroke-width="2.1" stroke-linecap="round"/>
+          <path d="M10.8 18.2H20.8" stroke="#FAF8F3" stroke-width="2.1" stroke-linecap="round"/>
+          <circle cx="25.5" cy="24.5" r="3" fill="#C84B31"/>
+        </svg>
+        <span class="fameo-wordmark">Fameo</span>
+      </span>
+      <span class="fameo-crm-tag">CRM</span>
+    </a>
+
     <div class="header-right">
       <div class="avatar-btn">
         <img id="userAvatar" src="" alt="">
         <span id="userName">—</span>
       </div>
-      <button class="signout-btn" id="headerSignoutBtn">Sign Out</button>
+      <button class="signout-btn" id="headerSignoutBtn" type="button">Sign Out →</button>
     </div>
   </header>
 
-  <div class="tabs" id="appTabs">
-    <div class="tab active" onclick="switchTab('search')">➕ Add Leads</div>
-    <div class="tab" onclick="switchTab('database')">📋 Database</div>
-  </div>
+  <nav class="tabs" id="appTabs" aria-label="CRM sections">
+    <div class="tab active" data-tab="search" onclick="switchTab('search')">
+      <span class="tab-num">01</span> Add Leads
+    </div>
+    <div class="tab" data-tab="database" onclick="switchTab('database')">
+      <span class="tab-num">02</span> Lead Database
+    </div>
+  </nav>
 
-  <!-- SEARCH TAB -->
-  <div class="page active" id="page-search">
-    <div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <button class="btn btn-ghost" onclick="toggleManualForm()" style="font-size:.79rem;padding:8px 13px">➕ Add Manually</button>
-    </div>
-    <div class="add-form" id="manualForm">
-      <div class="form-title">Add Lead Manually</div>
-      <div class="form-row">
-        <input class="form-input" id="mName" placeholder="Lead Name *">
-        <input class="form-input" id="mPhone" placeholder="Phone Number *" type="tel">
+  <!-- 01: ADD LEADS TAB -->
+  <section class="page active" id="page-search">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow"><span class="eyebrow-dot"></span>01 — Lead Capture</div>
+        <h1 class="editorial-title" style="margin-top:8px;">Add a lead <em>to the roster.</em></h1>
+        <p class="page-sub">Log brand prospects, creator leads, and partnership contacts with automatic duplicate phone detection.</p>
       </div>
-      <div class="form-row">
-        <select class="form-input" id="mResponse">
-          <option value="Not Called">Not Called</option>
-          <option value="Called">Called</option>
-          <option value="Follow Up">Follow Up</option>
-          <option value="Not Picked Call">Not Picked Call</option>
-          <option value="Not Interested">Not Interested</option>
-          <option value="Sent Demo">Sent Demo</option>
-        </select>
-        <div></div>
-      </div>
-      <textarea class="notes-area" id="mNotes" placeholder="Notes (optional)"></textarea>
-      <div style="display:flex;gap:8px;margin-top:4px">
-        <button class="btn btn-primary" onclick="addManually()">💾 Save to Database</button>
-        <button class="btn btn-ghost" onclick="toggleManualForm()">Cancel</button>
+      <div class="page-actions">
+        <button class="btn btn-ghost btn-sm" type="button" onclick="toggleManualForm()">Toggle Form</button>
+        <button class="btn btn-primary btn-sm" type="button" onclick="switchTab('database')">View Pipeline →</button>
       </div>
     </div>
+
+    <div class="add-form open" id="manualForm">
+      <div class="form-header">
+        <h2 class="form-title">New Lead Brief</h2>
+        <span class="eyebrow">Required fields marked *</span>
+      </div>
+
+      <div class="form-row">
+        <div class="field-group">
+          <label class="field-label" for="mName">Lead / Brand / Creator Name *</label>
+          <input class="form-input" id="mName" placeholder="e.g. Orchid Natures / Ananya Sharma">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="mPhone">Phone / WhatsApp Number *</label>
+          <input class="form-input" id="mPhone" placeholder="e.g. +91 98765 43210" type="tel">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field-group">
+          <label class="field-label" for="mType">Lead Type</label>
+          <select class="form-input" id="mType">
+            <option value="Brand">Brand</option>
+            <option value="Creator">Creator</option>
+            <option value="Agency / Partner">Agency / Partner</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="mResponse">Outreach Status</label>
+          <select class="form-input" id="mResponse">
+            <option value="Not Called">Not Called</option>
+            <option value="Called">Called</option>
+            <option value="Follow Up">Follow Up</option>
+            <option value="Not Picked Call">Not Picked Call</option>
+            <option value="Not Interested">Not Interested</option>
+            <option value="Sent Demo">Sent Demo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field-group">
+          <label class="field-label" for="mCity">City / Market (Optional)</label>
+          <input class="form-input" id="mCity" placeholder="e.g. Guwahati, Mumbai, Delhi">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="mHandle">Instagram / Website (Optional)</label>
+          <input class="form-input" id="mHandle" placeholder="e.g. @brandhandle or website.com">
+        </div>
+      </div>
+
+      <div class="field-group" style="margin-bottom:18px;">
+        <label class="field-label" for="mNotes">Campaign / Call Notes (Optional)</label>
+        <textarea class="notes-area" id="mNotes" placeholder="Objective, budget range, deliverables, or call summary…"></textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" type="button" onclick="addManually()">Save to Roster ↗</button>
+        <button class="btn btn-ghost" type="button" onclick="clearManualForm()">Reset Fields</button>
+      </div>
+    </div>
+
     <div id="searchResults"></div>
-  </div>
+  </section>
 
-  <!-- DATABASE TAB -->
-  <div class="page" id="page-database">
-    <div class="stats">
-      <div class="stat-box"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Total Leads</div></div>
-      <div class="stat-box"><div class="stat-num" id="statCalled" style="color:var(--green)">—</div><div class="stat-label">Called</div></div>
-      <div class="stat-box"><div class="stat-num" id="statPending" style="color:var(--red)">—</div><div class="stat-label">Pending</div></div>
-      <div class="stat-box"><div class="stat-num" id="statFollowup" style="color:var(--orange)">—</div><div class="stat-label">Follow Up</div></div>
+  <!-- 02: DATABASE TAB -->
+  <section class="page" id="page-database">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow"><span class="eyebrow-dot"></span>02 — Lead Pipeline</div>
+        <h1 class="editorial-title" style="margin-top:8px;">Leads that <em>move with us.</em></h1>
+        <p class="page-sub">Live team roster across Guwahati, the Northeast, and Pan India campaigns.</p>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-primary btn-sm" type="button" onclick="switchTab('search')">+ Add Lead ↗</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="exportCSV()">Export CSV ↓</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="loadDatabase()">↺ Refresh</button>
+      </div>
     </div>
+
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-top"><span class="stat-label">Total Leads</span><span class="stat-dot"></span></div>
+        <div class="stat-num" id="statTotal">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-top"><span class="stat-label">Called</span><span class="stat-dot" style="background:var(--green);"></span></div>
+        <div class="stat-num" id="statCalled" style="color:var(--green);">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-top"><span class="stat-label">Pending</span><span class="stat-dot" style="background:var(--red);"></span></div>
+        <div class="stat-num" id="statPending" style="color:var(--red);">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-top"><span class="stat-label">Follow Up</span><span class="stat-dot" style="background:var(--orange);"></span></div>
+        <div class="stat-num" id="statFollowup" style="color:var(--orange);">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-top"><span class="stat-label">Not Picked</span><span class="stat-dot" style="background:var(--stone);"></span></div>
+        <div class="stat-num" id="statNotPicked" style="color:var(--stone);">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-top"><span class="stat-label">Not Interested</span><span class="stat-dot" style="background:var(--red);"></span></div>
+        <div class="stat-num" id="statNotInterested" style="color:var(--red);">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-top"><span class="stat-label">Sent Demo</span><span class="stat-dot" style="background:var(--blue);"></span></div>
+        <div class="stat-num" id="statSentDemo" style="color:var(--blue);">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-top"><span class="stat-label">Called Today</span><span class="stat-dot" style="background:var(--accent);"></span></div>
+        <div class="stat-num" id="statCalledToday" style="color:var(--accent);">—</div>
+      </div>
+    </div>
+
     <div class="db-filters">
-      <input class="filter-input" id="dbSearch" placeholder="🔍 Search by name…" oninput="renderDB()">
+      <input class="filter-input" id="dbSearch" placeholder="Search by name, phone, city, handle, or notes…" oninput="renderDB()">
       <select class="filter-select" id="dbUser" onchange="renderDB()">
-        <option value="">All Users</option>
+        <option value="">All Team Members</option>
       </select>
       <select class="filter-select" id="dbStatus" onchange="renderDB()">
         <option value="">All Status</option>
@@ -235,10 +206,28 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
         <option value="Not Interested">Not Interested</option>
         <option value="Sent Demo">Sent Demo</option>
       </select>
-      <button class="btn btn-ghost" onclick="loadDatabase()" style="padding:8px 13px;font-size:.79rem">↺ Refresh</button>
+      <button class="btn btn-ghost btn-sm" id="clearFiltersBtn" type="button" onclick="clearFilters()" style="display:none;">Clear ✕</button>
     </div>
-    <div id="dbResults" class="cards"><div class="loading">Loading…</div></div>
-  </div>
+
+    <div id="dbResults" class="cards"><div class="loading">Loading Fameo roster…</div></div>
+  </section>
+
+  <footer class="studio-footer">
+    <span style="display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <img
+        class="fameo-brand-logo-sm"
+        src="https://fameomedia.vercel.app/img/fameo-logo.svg?v=2"
+        alt="Fameo"
+        onerror="this.style.display='none';"
+      >
+      <span>Studio CRM — <em>Influence, composed.</em></span>
+    </span>
+    <div class="studio-footer-links">
+      <a href="mailto:fameomedia@gmail.com">fameomedia@gmail.com ↗</a>
+      <a href="tel:+916003909707">+91 60039 09707</a>
+      <a href="https://fameomedia.vercel.app/" target="_blank" rel="noopener">fameomedia.vercel.app ↗</a>
+    </div>
+  </footer>
 
 </div>
 

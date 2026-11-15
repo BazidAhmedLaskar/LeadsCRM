@@ -7,26 +7,30 @@ import { signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut } from 
 
 const provider = new GoogleAuthProvider();
 
-// Connect sign-in button
 document.getElementById('googleSignInBtn')?.addEventListener('click', signInWithGoogle);
 document.getElementById('headerSignoutBtn')?.addEventListener('click', handleSignOut);
 document.getElementById('pendingSignoutBtn')?.addEventListener('click', handleSignOut);
 
-async function signInWithGoogle() {
+function setGoogleBtnState(disabled, label) {
   const btn = document.getElementById('googleSignInBtn');
+  if (!btn) return;
+  btn.disabled = disabled;
+  const labelEl = btn.querySelector('.btn-label');
+  if (labelEl) {
+    labelEl.textContent = label;
+  } else {
+    btn.textContent = label;
+  }
+}
+
+async function signInWithGoogle() {
   try {
-    btn.disabled = true;
-    btn.textContent = 'Signing in...';
-    
+    setGoogleBtnState(true, 'Signing in…');
     const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-    
-    console.log('✅ Signed in:', user.email);
-    // Auth state listener will handle screen transitions
-    
+    console.log('✅ Signed in:', result.user.email);
   } catch (error) {
     console.error('❌ Sign-in error:', error.code, error.message);
-    
+
     if (error.code === 'auth/popup-closed-by-user') {
       showToast('Sign-in cancelled', 'var(--orange)');
     } else if (error.code === 'auth/popup-blocked') {
@@ -34,9 +38,8 @@ async function signInWithGoogle() {
     } else {
       showToast('Sign-in failed: ' + error.message, 'var(--red)');
     }
-    
-    btn.disabled = false;
-    btn.textContent = 'Continue with Google';
+
+    setGoogleBtnState(false, 'Continue with Google ↗');
   }
 }
 
@@ -57,35 +60,36 @@ async function handleSignOut() {
 // ═════════════════════════════
 
 auth.onAuthStateChanged(async (user) => {
-  const currentPage = window.location.pathname.split('/').pop();
-  
+  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  const isLoginPage = currentPage === 'login.html' || currentPage === 'login';
+  const isAppPage = currentPage === 'app.html' || currentPage === 'app';
+  const isPendingPage = currentPage === 'pending.html' || currentPage === 'pending';
+
   if (!user) {
-    if (currentPage !== 'login.html') {
+    if (!isLoginPage) {
       window.location.href = 'login.html';
     }
     console.log('🔓 No user logged in');
     return;
   }
-  
+
   console.log('🔐 User logged in:', user.uid, user.email);
-  
-  // For now, assume approved and go to app
-  // In production, check approval status
-  if (currentPage !== 'app.html') {
+
+  if (!isAppPage && !isPendingPage) {
     window.location.href = 'app.html';
+    return;
   }
-  
-  // Update user info if on app page
-  if (currentPage === 'app.html') {
+
+  if (isAppPage) {
     const userName = document.getElementById('userName');
     const userAvatar = document.getElementById('userAvatar');
-    
     if (userName) userName.textContent = user.displayName?.split(' ')[0] || user.email.split('@')[0];
-    if (userAvatar) userAvatar.src = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email)}&background=1e2d4d&color=94a3b8`;
+    if (userAvatar) {
+      userAvatar.src = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email)}&background=ECE7DC&color=141413`;
+    }
   }
-  
-  // If on pending page, set email
-  if (currentPage === 'pending.html') {
+
+  if (isPendingPage) {
     const pendingEmail = document.getElementById('pendingEmail');
     if (pendingEmail) pendingEmail.textContent = user.email;
   }
@@ -96,7 +100,7 @@ auth.onAuthStateChanged(async (user) => {
 // ═════════════════════════════
 
 let toastTimer;
-function showToast(msg, color = 'var(--green)') {
+function showToast(msg, color = 'var(--ink)') {
   const toast = document.getElementById('toast');
   if (!toast) return;
   toast.textContent = msg;
@@ -106,7 +110,6 @@ function showToast(msg, color = 'var(--green)') {
   toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
 }
 
-// Make functions globally available
 window.showToast = showToast;
 window.signInWithGoogle = signInWithGoogle;
 window.handleSignOut = handleSignOut;
