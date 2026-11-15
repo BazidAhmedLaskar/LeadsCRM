@@ -80,7 +80,7 @@
     <div class="add-form open" id="manualForm">
       <div class="form-header">
         <h2 class="form-title">New Lead Brief</h2>
-        <span class="eyebrow">Required fields marked *</span>
+        <span class="eyebrow">Name + Phone or Email required</span>
       </div>
 
       <div class="form-row">
@@ -89,8 +89,19 @@
           <input class="form-input" id="mName" placeholder="e.g. Orchid Natures / Ananya Sharma">
         </div>
         <div class="field-group">
-          <label class="field-label" for="mPhone">Phone / WhatsApp Number *</label>
+          <label class="field-label" for="mPhone">Phone / WhatsApp Number</label>
           <input class="form-input" id="mPhone" placeholder="e.g. +91 98765 43210" type="tel">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field-group">
+          <label class="field-label" for="mEmail">Email Address</label>
+          <input class="form-input" id="mEmail" placeholder="e.g. team@brand.com" type="email">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="mHandle">Instagram / Website (Optional)</label>
+          <input class="form-input" id="mHandle" placeholder="e.g. @brandhandle or website.com">
         </div>
       </div>
 
@@ -119,18 +130,43 @@
 
       <div class="form-row">
         <div class="field-group">
+          <label class="field-label" for="mCategory">Category / Niche (Optional)</label>
+          <select class="form-input" id="mCategory">
+            <option value="">Select category…</option>
+            <option value="Skincare">Skincare</option>
+            <option value="Beauty & Cosmetics">Beauty &amp; Cosmetics</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Wellness">Wellness</option>
+            <option value="Health & Fitness">Health &amp; Fitness</option>
+            <option value="Finance">Finance</option>
+            <option value="Entertainment & Lifestyle">Entertainment &amp; Lifestyle</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="mBudget">Estimated Budget (Optional)</label>
+          <select class="form-input" id="mBudget">
+            <option value="">Not specified</option>
+            <option value="Under ₹1,00,000">Under ₹1,00,000</option>
+            <option value="₹1,00,000 – ₹3,00,000">₹1,00,000 – ₹3,00,000</option>
+            <option value="₹3,00,000 – ₹7,00,000">₹3,00,000 – ₹7,00,000</option>
+            <option value="₹7,00,000 – ₹15,00,000">₹7,00,000 – ₹15,00,000</option>
+            <option value="₹15,00,000+">₹15,00,000+</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field-group">
           <label class="field-label" for="mCity">City / Market (Optional)</label>
           <input class="form-input" id="mCity" placeholder="e.g. Guwahati, Mumbai, Delhi">
         </div>
-        <div class="field-group">
-          <label class="field-label" for="mHandle">Instagram / Website (Optional)</label>
-          <input class="form-input" id="mHandle" placeholder="e.g. @brandhandle or website.com">
-        </div>
+        <div></div>
       </div>
 
       <div class="field-group" style="margin-bottom:18px;">
         <label class="field-label" for="mNotes">Campaign / Call Notes (Optional)</label>
-        <textarea class="notes-area" id="mNotes" placeholder="Objective, budget range, deliverables, or call summary…"></textarea>
+        <textarea class="notes-area" id="mNotes" placeholder="Objective, campaign timeline, deliverables, or call summary…"></textarea>
       </div>
 
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
@@ -193,7 +229,7 @@
     </div>
 
     <div class="db-filters">
-      <input class="filter-input" id="dbSearch" placeholder="Search by name, phone, city, handle, or notes…" oninput="renderDB()">
+      <input class="filter-input" id="dbSearch" placeholder="Search by name, email, phone, category, city, handle, or notes…" oninput="renderDB()">
       <select class="filter-select" id="dbUser" onchange="renderDB()">
         <option value="">All Team Members</option>
       </select>
