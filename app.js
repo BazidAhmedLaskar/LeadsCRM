@@ -2,7 +2,7 @@
 
 import { auth, db } from './firebase-config.js';
 import { signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-import { collection, addDoc, getDocs, query, orderBy, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+import { collection, addDoc, getDocs, query, orderBy, doc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 const provider = new GoogleAuthProvider();
 const TALKED_STATUSES = new Set(['Called', 'Follow Up', 'Sent Demo', 'Not Interested']);
@@ -1417,16 +1417,47 @@ function renderRoster() {
     textPreview.textContent = buildRosterPlainText(leads, cfg);
   }
   invalidateShareUrl();
+  updateSharePreviewCard(leads, cfg);
 }
 
 let currentShareUrl = '';
+let currentShortId = '';
+
+function generateShortCode(len = 6) {
+  const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+  let out = '';
+  for (let i = 0; i < len; i++) {
+    out += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return out;
+}
+
+function updateSharePreviewCard(leads, cfg) {
+  const titleEl = document.getElementById('sharePreviewTitle');
+  const descEl = document.getElementById('sharePreviewDesc');
+  const urlEl = document.getElementById('sharePreviewUrlText');
+  if (titleEl) titleEl.textContent = cfg.title || 'Fameo Client Roster';
+  if (descEl) {
+    const notePart = cfg.note ? `${cfg.note} · ` : '';
+    descEl.textContent = `${notePart}${leads.length} ${leads.length === 1 ? 'client' : 'clients'} · Logged-in Fameo users can edit cells live with real-time CRM sync.`;
+  }
+  if (urlEl) {
+    urlEl.textContent = currentShareUrl || `${window.location.origin}/roster.html?r=•••••• (click Create Short Link)`;
+  }
+}
 
 function invalidateShareUrl() {
   currentShareUrl = '';
   const urlInput = document.getElementById('rosterShareUrl');
   const statusEl = document.getElementById('rosterLinkStatus');
   if (urlInput) urlInput.value = '';
-  if (statusEl) statusEl.textContent = 'Ready to generate';
+  if (statusEl) statusEl.textContent = 'Ready to generate short link';
+  const iframeWrap = document.getElementById('rosterInlinePreviewWrap');
+  if (iframeWrap && iframeWrap.style.display !== 'none') {
+    const frame = document.getElementById('rosterInlinePreviewFrame');
+    if (frame) frame.src = 'about:blank';
+    iframeWrap.style.display = 'none';
+  }
 }
 
 function toBase64Url(bytes) {
@@ -1471,7 +1502,8 @@ function buildShareSnapshot(leads, cfg) {
       owner,
       dtStr,
       lead.notes || '',
-      isTalkedToday(lead) ? 1 : 0
+      isTalkedToday(lead) ? 1 : 0,
+      lead.id || ''
     ];
   });
 
@@ -1494,8 +1526,6 @@ function buildShareSnapshot(leads, cfg) {
 }
 
 async function generateShareLink(silent = false) {
-  if (currentShareUrl) return currentShareUrl;
-
   const cfg = getRosterConfig();
   const leads = getRosterLeads(cfg.source);
   if (!leads.length) {
@@ -1503,34 +1533,43 @@ async function generateShareLink(silent = false) {
     return '';
   }
 
-  const mode = document.getElementById('rosterShareMode')?.value || 'public';
+  if (currentShareUrl) {
+    updateSharePreviewCard(leads, cfg);
+    return currentShareUrl;
+  }
+
+  const mode = document.getElementById('rosterShareMode')?.value || 'team';
   const statusEl = document.getElementById('rosterLinkStatus');
   const urlInput = document.getElementById('rosterShareUrl');
   const baseViewerUrl = new URL('roster.html', window.location.href).href;
 
-  if (statusEl) statusEl.textContent = 'Creating link…';
+  if (statusEl) statusEl.textContent = 'Creating short link…';
 
   const snapshot = buildShareSnapshot(leads, cfg);
 
   if (mode === 'team') {
     try {
-      const docRef = await addDoc(collection(db, 'rosters'), {
+      const shortId = currentShortId || generateShortCode(6);
+      await setDoc(doc(db, 'rosters', shortId), {
         title: cfg.title,
         note: cfg.note,
         sharedBy: snapshot.sb,
         createdAt: new Date(),
+        updatedAt: new Date(),
         createdBy: auth.currentUser?.uid || '',
         createdByName: snapshot.sb,
         columns: snapshot.c,
         l: snapshot.l
       });
-      currentShareUrl = `${baseViewerUrl}?id=${encodeURIComponent(docRef.id)}`;
+      currentShortId = shortId;
+      currentShareUrl = `${baseViewerUrl}?r=${encodeURIComponent(shortId)}`;
       if (urlInput) urlInput.value = currentShareUrl;
-      if (statusEl) statusEl.textContent = `Team link ready (${leads.length} clients)`;
-      if (!silent) showToast('Team sheet link created!', 'var(--green)');
+      if (statusEl) statusEl.textContent = `Short cloud link ready (${leads.length} clients · live edit)`;
+      updateSharePreviewCard(leads, cfg);
+      if (!silent) showToast('Short website sheet link created!', 'var(--green)');
       return currentShareUrl;
     } catch (err) {
-      console.warn('Firestore rosters write failed, falling back to public link:', err);
+      console.warn('Firestore rosters write failed, falling back to embedded link:', err);
     }
   }
 
@@ -1538,7 +1577,8 @@ async function generateShareLink(silent = false) {
     const hash = await encodePublicSheetHash(snapshot);
     currentShareUrl = `${baseViewerUrl}${hash}`;
     if (urlInput) urlInput.value = currentShareUrl;
-    if (statusEl) statusEl.textContent = `Public link ready (${leads.length} clients · no login needed)`;
+    if (statusEl) statusEl.textContent = `Embedded link ready (${leads.length} clients · no cloud needed)`;
+    updateSharePreviewCard(leads, cfg);
     if (!silent) showToast('Website sheet link created!', 'var(--green)');
     return currentShareUrl;
   } catch (error) {
@@ -1547,6 +1587,26 @@ async function generateShareLink(silent = false) {
     showToast('Failed to generate share link', 'var(--red)');
     return '';
   }
+}
+
+async function toggleInlineSheetPreview(forceShow) {
+  const wrap = document.getElementById('rosterInlinePreviewWrap');
+  const frame = document.getElementById('rosterInlinePreviewFrame');
+  if (!wrap || !frame) return;
+
+  const isVisible = wrap.style.display !== 'none';
+  const shouldShow = typeof forceShow === 'boolean' ? forceShow : !isVisible;
+  if (!shouldShow) {
+    wrap.style.display = 'none';
+    frame.src = 'about:blank';
+    return;
+  }
+
+  const url = await generateShareLink(true);
+  if (!url) return;
+  frame.src = url;
+  wrap.style.display = 'block';
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 async function copyShareLink() {
@@ -1727,6 +1787,7 @@ function renderExcelSheet(leads, opts = {}) {
   const sheetTitle = opts.sheetTitle || 'Fameo_Clients.xls';
 
   const cols = [{ key: 'name', label: 'Client Name' }];
+  if (showCity) cols.push({ key: 'handle', label: 'Instagram ID' });
   if (showPhone) cols.push({ key: 'phone', label: 'Phone' });
   if (showEmail) cols.push({ key: 'email', label: 'Email' });
   if (showCategory) {
@@ -1734,10 +1795,7 @@ function renderExcelSheet(leads, opts = {}) {
     cols.push({ key: 'category', label: 'Category' });
     cols.push({ key: 'budget', label: 'Budget' });
   }
-  if (showCity) {
-    cols.push({ key: 'city', label: 'City' });
-    cols.push({ key: 'handle', label: 'Handle / Web' });
-  }
+  if (showCity) cols.push({ key: 'city', label: 'City' });
   if (showStatus) cols.push({ key: 'status', label: 'Status' });
   if (showTalked) {
     cols.push({ key: 'owner', label: 'Owner' });
@@ -1788,6 +1846,12 @@ function renderExcelSheet(leads, opts = {}) {
               ? `<td><input class="excel-input" style="font-weight:600;min-width:155px;" value="${escapeHtml(lead.name || '')}" onchange="updateExcelCell('${safeId}', 'name', this.value)"></td>`
               : `<td class="excel-cell"><strong>${escapeHtml(lead.name || '')}</strong></td>`);
 
+            if (showCity) {
+              cells.push(editable
+                ? `<td><input class="excel-input excel-input-mono" style="min-width:130px;color:var(--accent);" value="${escapeHtml(lead.handle || '')}" placeholder="@instagram_id" onchange="updateExcelCell('${safeId}', 'handle', this.value)"></td>`
+                : `<td class="excel-cell excel-input-mono">${escapeHtml(lead.handle || '—')}</td>`);
+            }
+
             if (showPhone) {
               cells.push(editable
                 ? `<td><input class="excel-input excel-input-mono" style="min-width:130px;" value="${escapeHtml(lead.phone || '')}" onchange="updateExcelCell('${safeId}', 'phone', this.value)"></td>`
@@ -1816,9 +1880,6 @@ function renderExcelSheet(leads, opts = {}) {
               cells.push(editable
                 ? `<td><input class="excel-input" style="min-width:110px;" value="${escapeHtml(lead.city || '')}" placeholder="City" onchange="updateExcelCell('${safeId}', 'city', this.value)"></td>`
                 : `<td class="excel-cell">${escapeHtml(lead.city || '—')}</td>`);
-              cells.push(editable
-                ? `<td><input class="excel-input excel-input-mono" style="min-width:125px;" value="${escapeHtml(lead.handle || '')}" placeholder="@handle" onchange="updateExcelCell('${safeId}', 'handle', this.value)"></td>`
-                : `<td class="excel-cell excel-input-mono">${escapeHtml(lead.handle || '—')}</td>`);
             }
 
             if (showStatus) {
@@ -1878,24 +1939,26 @@ function renderExcelSheet(leads, opts = {}) {
 }
 
 async function updateExcelCell(id, field, rawValue) {
-  const value = String(rawValue ?? '').trim();
+  let value = String(rawValue ?? '').trim();
   if (field === 'status') {
     await updateStatus(id, value);
     return;
   }
 
-  const existing = allLeads.find(l => l.id === id);
   if (field === 'name' && !value) {
     showToast('Client name cannot be empty', 'var(--red)');
     renderDB();
     renderRoster();
     return;
   }
-  if (field === 'handle' && !value) {
-    showToast('Instagram ID cannot be empty', 'var(--red)');
-    renderDB();
-    renderRoster();
-    return;
+  if (field === 'handle') {
+    value = normalizeHandle(value);
+    if (!value) {
+      showToast('Instagram ID cannot be empty', 'var(--red)');
+      renderDB();
+      renderRoster();
+      return;
+    }
   }
 
   try {
@@ -2108,6 +2171,7 @@ window.copyRosterTSV = copyRosterTSV;
 window.generateShareLink = generateShareLink;
 window.copyShareLink = copyShareLink;
 window.openSharedRosterPage = openSharedRosterPage;
+window.toggleInlineSheetPreview = toggleInlineSheetPreview;
 window.invalidateShareUrl = invalidateShareUrl;
 
 console.log('✅ Fameo CRM initialized');
