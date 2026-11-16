@@ -61,15 +61,18 @@
     <div class="tab" data-tab="database" onclick="switchTab('database')">
       <span class="tab-num">02</span> Lead Database
     </div>
+    <div class="tab" data-tab="roster" onclick="switchTab('roster')">
+      <span class="tab-num">03</span> Roster &amp; Share <span class="chip" id="rosterTabBadge" style="display:none;margin-left:2px;">0</span>
+    </div>
   </nav>
 
   <!-- 01: ADD LEADS TAB -->
   <section class="page active" id="page-search">
     <div class="page-head">
       <div>
-        <div class="eyebrow"><span class="eyebrow-dot"></span>01 — Lead Capture</div>
-        <h1 class="editorial-title" style="margin-top:8px;">Add a lead <em>to the roster.</em></h1>
-        <p class="page-sub">Log brand prospects, creator leads, and partnership contacts with automatic duplicate phone detection.</p>
+        <div class="eyebrow"><span class="eyebrow-dot"></span>01 — Client Capture</div>
+        <h1 class="editorial-title" style="margin-top:8px;">Add a client <em>to the roster.</em></h1>
+        <p class="page-sub">Log brand &amp; client prospects, contacts, and call notes with automatic duplicate phone &amp; email detection.</p>
       </div>
       <div class="page-actions">
         <button class="btn btn-ghost btn-sm" type="button" onclick="toggleManualForm()">Toggle Form</button>
@@ -79,14 +82,14 @@
 
     <div class="add-form open" id="manualForm">
       <div class="form-header">
-        <h2 class="form-title">New Lead Brief</h2>
+        <h2 class="form-title">New Client Brief</h2>
         <span class="eyebrow">Name + Phone or Email required</span>
       </div>
 
       <div class="form-row">
         <div class="field-group">
-          <label class="field-label" for="mName">Lead / Brand / Creator Name *</label>
-          <input class="form-input" id="mName" placeholder="e.g. Orchid Natures / Ananya Sharma">
+          <label class="field-label" for="mName">Client / Brand Name *</label>
+          <input class="form-input" id="mName" placeholder="e.g. Orchid Natures / Rahul Das">
         </div>
         <div class="field-group">
           <label class="field-label" for="mPhone">Phone / WhatsApp Number</label>
@@ -107,10 +110,11 @@
 
       <div class="form-row">
         <div class="field-group">
-          <label class="field-label" for="mType">Lead Type</label>
+          <label class="field-label" for="mType">Client Type</label>
           <select class="form-input" id="mType">
             <option value="Brand">Brand</option>
-            <option value="Creator">Creator</option>
+            <option value="D2C / Ecommerce">D2C / Ecommerce</option>
+            <option value="Local Business">Local Business</option>
             <option value="Agency / Partner">Agency / Partner</option>
             <option value="Other">Other</option>
           </select>
@@ -182,70 +186,246 @@
   <section class="page" id="page-database">
     <div class="page-head">
       <div>
-        <div class="eyebrow"><span class="eyebrow-dot"></span>02 — Lead Pipeline</div>
-        <h1 class="editorial-title" style="margin-top:8px;">Leads that <em>move with us.</em></h1>
-        <p class="page-sub">Live team roster across Guwahati, the Northeast, and Pan India campaigns.</p>
+        <div class="eyebrow"><span class="eyebrow-dot"></span>02 — Client Pipeline</div>
+        <h1 class="editorial-title" style="margin-top:8px;">Clients that <em>move with us.</em></h1>
+        <p class="page-sub">Live client roster, today’s talked calls, and Pan-India campaign follow-ups.</p>
       </div>
       <div class="page-actions">
-        <button class="btn btn-primary btn-sm" type="button" onclick="switchTab('search')">+ Add Lead ↗</button>
+        <button class="btn btn-primary btn-sm" type="button" onclick="switchTab('search')">+ Add Client ↗</button>
+        <button class="btn btn-green btn-sm" type="button" onclick="exportFilteredExcel()">📊 Excel (.xls) ↓</button>
         <button class="btn btn-ghost btn-sm" type="button" onclick="exportCSV()">Export CSV ↓</button>
         <button class="btn btn-ghost btn-sm" type="button" onclick="loadDatabase()">↺ Refresh</button>
       </div>
     </div>
 
     <div class="stats">
-      <div class="stat-box">
-        <div class="stat-top"><span class="stat-label">Total Leads</span><span class="stat-dot"></span></div>
+      <div class="stat-box" role="button" tabindex="0" onclick="applyQuickPreset('all')" title="Show all clients">
+        <div class="stat-top"><span class="stat-label">Total Clients</span><span class="stat-dot"></span></div>
         <div class="stat-num" id="statTotal">—</div>
       </div>
-      <div class="stat-box">
+      <div class="stat-box" role="button" tabindex="0" onclick="applyQuickPreset('status:Called')" title="Filter Called">
         <div class="stat-top"><span class="stat-label">Called</span><span class="stat-dot" style="background:var(--green);"></span></div>
         <div class="stat-num" id="statCalled" style="color:var(--green);">—</div>
       </div>
-      <div class="stat-box">
+      <div class="stat-box" role="button" tabindex="0" onclick="applyQuickPreset('status:Not Called')" title="Filter Pending">
         <div class="stat-top"><span class="stat-label">Pending</span><span class="stat-dot" style="background:var(--red);"></span></div>
         <div class="stat-num" id="statPending" style="color:var(--red);">—</div>
       </div>
-      <div class="stat-box">
+      <div class="stat-box" role="button" tabindex="0" onclick="applyQuickPreset('status:Follow Up')" title="Filter Follow Up">
         <div class="stat-top"><span class="stat-label">Follow Up</span><span class="stat-dot" style="background:var(--orange);"></span></div>
         <div class="stat-num" id="statFollowup" style="color:var(--orange);">—</div>
       </div>
-      <div class="stat-box">
+      <div class="stat-box" role="button" tabindex="0" onclick="applyQuickPreset('status:Not Picked Call')" title="Filter Not Picked">
         <div class="stat-top"><span class="stat-label">Not Picked</span><span class="stat-dot" style="background:var(--stone);"></span></div>
         <div class="stat-num" id="statNotPicked" style="color:var(--stone);">—</div>
       </div>
-      <div class="stat-box">
+      <div class="stat-box" role="button" tabindex="0" onclick="applyQuickPreset('status:Not Interested')" title="Filter Not Interested">
         <div class="stat-top"><span class="stat-label">Not Interested</span><span class="stat-dot" style="background:var(--red);"></span></div>
         <div class="stat-num" id="statNotInterested" style="color:var(--red);">—</div>
       </div>
-      <div class="stat-box">
+      <div class="stat-box" role="button" tabindex="0" onclick="applyQuickPreset('status:Sent Demo')" title="Filter Sent Demo">
         <div class="stat-top"><span class="stat-label">Sent Demo</span><span class="stat-dot" style="background:var(--blue);"></span></div>
         <div class="stat-num" id="statSentDemo" style="color:var(--blue);">—</div>
       </div>
-      <div class="stat-box">
-        <div class="stat-top"><span class="stat-label">Called Today</span><span class="stat-dot" style="background:var(--accent);"></span></div>
+      <div class="stat-box" role="button" tabindex="0" onclick="applyQuickPreset('talkedToday')" title="Filter clients talked today">
+        <div class="stat-top"><span class="stat-label">Talked Today</span><span class="stat-dot" style="background:var(--accent);"></span></div>
         <div class="stat-num" id="statCalledToday" style="color:var(--accent);">—</div>
       </div>
     </div>
 
+    <!-- TODAY TALKED CLIENTS DIGEST -->
+    <section class="today-panel" id="todayTalkedPanel">
+      <div class="today-panel-head">
+        <div>
+          <div class="eyebrow"><span class="eyebrow-dot"></span>Today’s Talked Clients · <span id="todayDateLabel">—</span></div>
+          <h2 class="today-title"><span id="todayTalkedHeading">0 clients</span> <em>talked today.</em></h2>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm" type="button" onclick="applyQuickPreset('talkedToday')">Filter Talked Today ↗</button>
+          <button class="btn btn-accent btn-sm" type="button" onclick="openRosterWithSource('talkedToday')">Share Today’s Roster ↗</button>
+          <button class="btn btn-ghost btn-sm" id="toggleTodayListBtn" type="button" onclick="toggleTodayList()">Show Today’s Log ▾</button>
+        </div>
+      </div>
+      <div class="today-chips" id="todayBreakdownChips"></div>
+      <div class="today-list" id="todayTalkedList"></div>
+    </section>
+
+    <!-- QUICK FILTER PILLS -->
+    <div class="quick-filters" id="quickFilterPills">
+      <button class="quick-chip active" data-preset="all" type="button" onclick="applyQuickPreset('all')">All Clients</button>
+      <button class="quick-chip" data-preset="talkedToday" type="button" onclick="applyQuickPreset('talkedToday')">Talked Today</button>
+      <button class="quick-chip" data-preset="addedToday" type="button" onclick="applyQuickPreset('addedToday')">Added Today</button>
+      <button class="quick-chip" data-preset="status:Not Called" type="button" onclick="applyQuickPreset('status:Not Called')">Pending</button>
+      <button class="quick-chip" data-preset="status:Follow Up" type="button" onclick="applyQuickPreset('status:Follow Up')">Follow Up</button>
+      <button class="quick-chip" data-preset="status:Sent Demo" type="button" onclick="applyQuickPreset('status:Sent Demo')">Sent Demo</button>
+      <button class="quick-chip" data-preset="hasEmail" type="button" onclick="applyQuickPreset('hasEmail')">Has Email</button>
+      <button class="quick-chip" data-preset="hasPhone" type="button" onclick="applyQuickPreset('hasPhone')">Has Phone</button>
+    </div>
+
+    <!-- FULL FILTER SUITE -->
     <div class="db-filters">
-      <input class="filter-input" id="dbSearch" placeholder="Search by name, email, phone, category, city, handle, or notes…" oninput="renderDB()">
-      <select class="filter-select" id="dbUser" onchange="renderDB()">
-        <option value="">All Team Members</option>
-      </select>
-      <select class="filter-select" id="dbStatus" onchange="renderDB()">
-        <option value="">All Status</option>
-        <option value="Not Called">Not Called</option>
-        <option value="Called">Called</option>
-        <option value="Follow Up">Follow Up</option>
-        <option value="Not Picked Call">Not Picked Call</option>
-        <option value="Not Interested">Not Interested</option>
-        <option value="Sent Demo">Sent Demo</option>
-      </select>
-      <button class="btn btn-ghost btn-sm" id="clearFiltersBtn" type="button" onclick="clearFilters()" style="display:none;">Clear ✕</button>
+      <div class="db-filters-top">
+        <input class="filter-input" id="dbSearch" placeholder="Search by client name, email, phone, category, budget, city, handle, or notes…" oninput="renderDB()">
+        <button class="btn btn-ghost btn-sm" id="clearFiltersBtn" type="button" onclick="clearFilters()" style="display:none;">Clear All ✕</button>
+      </div>
+      <div class="db-filters-grid">
+        <select class="filter-select" id="dbStatus" onchange="renderDB()">
+          <option value="">All Status</option>
+          <option value="Not Called">Not Called</option>
+          <option value="Called">Called</option>
+          <option value="Follow Up">Follow Up</option>
+          <option value="Not Picked Call">Not Picked Call</option>
+          <option value="Not Interested">Not Interested</option>
+          <option value="Sent Demo">Sent Demo</option>
+        </select>
+        <select class="filter-select" id="dbDate" onchange="renderDB()">
+          <option value="">All Dates</option>
+          <option value="talkedToday">Talked Today</option>
+          <option value="addedToday">Added Today</option>
+          <option value="last7days">Last 7 Days Activity</option>
+          <option value="thisMonth">This Month Activity</option>
+        </select>
+        <select class="filter-select" id="dbUser" onchange="renderDB()">
+          <option value="">All Team Members</option>
+        </select>
+        <select class="filter-select" id="dbType" onchange="renderDB()">
+          <option value="">All Client Types</option>
+        </select>
+        <select class="filter-select" id="dbCategory" onchange="renderDB()">
+          <option value="">All Categories</option>
+        </select>
+        <select class="filter-select" id="dbCity" onchange="renderDB()">
+          <option value="">All Cities</option>
+        </select>
+        <select class="filter-select" id="dbBudget" onchange="renderDB()">
+          <option value="">All Budgets</option>
+        </select>
+        <select class="filter-select" id="dbContact" onchange="renderDB()">
+          <option value="">All Contact Channels</option>
+          <option value="email">Has Email</option>
+          <option value="phone">Has Phone</option>
+          <option value="both">Has Email &amp; Phone</option>
+          <option value="notes">Has Call Notes</option>
+        </select>
+      </div>
+      <div class="db-filters-top" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <label class="field-label" for="dbSort">Sort</label>
+            <select class="filter-select" id="dbSort" onchange="renderDB()" style="width:auto;min-width:190px;">
+              <option value="activityDesc">Latest Activity First</option>
+              <option value="createdDesc">Newly Added First</option>
+              <option value="createdAsc">Oldest Added First</option>
+              <option value="nameAsc">Client Name (A → Z)</option>
+              <option value="status">Status</option>
+            </select>
+          </div>
+          <div class="view-switcher" role="group" aria-label="Database view mode">
+            <button class="view-switch-btn active" id="viewBtnCards" type="button" onclick="setDbViewMode('cards')">Cards</button>
+            <button class="view-switch-btn" id="viewBtnExcel" type="button" onclick="setDbViewMode('excel')">Excel Sheet</button>
+          </div>
+        </div>
+        <span class="results-meta-bar" id="dbResultCount" style="margin-bottom:0;">Showing — clients</span>
+      </div>
+    </div>
+
+    <div class="roster-bar" id="rosterActionBar">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span class="eyebrow"><span class="eyebrow-dot"></span>Roster Builder</span>
+        <span id="rosterSelectionStatus" style="font-size:0.83rem;color:var(--text-dim);">0 clients selected</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" type="button" onclick="selectAllFiltered()">Select Filtered</button>
+        <button class="btn btn-ghost btn-sm" id="clearSelectionBtn" type="button" onclick="clearRosterSelection()" style="display:none;">Clear Selection</button>
+        <button class="btn btn-primary btn-sm" type="button" onclick="openRosterFromDatabase()">Make &amp; Share Roster ↗</button>
+      </div>
     </div>
 
     <div id="dbResults" class="cards"><div class="loading">Loading Fameo roster…</div></div>
+  </section>
+
+  <!-- 03: ROSTER & SHARE TAB -->
+  <section class="page" id="page-roster">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow"><span class="eyebrow-dot"></span>03 — Roster &amp; Share</div>
+        <h1 class="editorial-title" style="margin-top:8px;">Client roster, <em>ready to share.</em></h1>
+        <p class="page-sub">Compile selected clients, filtered views, or today’s talked call log into a clean Fameo roster and share via WhatsApp, Email, CSV, or PDF.</p>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-ghost btn-sm" type="button" onclick="switchTab('database')">← Back to Pipeline</button>
+      </div>
+    </div>
+
+    <div class="roster-controls-card">
+      <div class="form-row">
+        <div class="field-group">
+          <label class="field-label" for="rosterSource">Roster Source</label>
+          <select class="form-input" id="rosterSource" onchange="renderRoster()">
+            <option value="talkedToday">Today’s Talked Clients</option>
+            <option value="filtered">Current Filtered Pipeline</option>
+            <option value="selected">Hand-Picked Selected Clients</option>
+            <option value="all">All Clients</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="rosterTitle">Roster Title</label>
+          <input class="form-input" id="rosterTitle" value="" placeholder="Fameo Client Roster" oninput="renderRoster()">
+        </div>
+      </div>
+
+      <div class="field-group" style="margin-bottom:14px;">
+        <label class="field-label" for="rosterNote">Summary / Header Note (Optional)</label>
+        <input class="form-input" id="rosterNote" placeholder="e.g. Daily outreach update from Guwahati studio — follow-ups prioritized" oninput="renderRoster()">
+      </div>
+
+      <div>
+        <span class="field-label">Include Details in Roster</span>
+        <div class="roster-col-toggles">
+          <label class="col-toggle-pill"><input type="checkbox" id="rColPhone" checked onchange="renderRoster()"> Phone</label>
+          <label class="col-toggle-pill"><input type="checkbox" id="rColEmail" checked onchange="renderRoster()"> Email</label>
+          <label class="col-toggle-pill"><input type="checkbox" id="rColStatus" checked onchange="renderRoster()"> Status</label>
+          <label class="col-toggle-pill"><input type="checkbox" id="rColCategory" checked onchange="renderRoster()"> Type / Category / Budget</label>
+          <label class="col-toggle-pill"><input type="checkbox" id="rColCity" checked onchange="renderRoster()"> City / Handle</label>
+          <label class="col-toggle-pill"><input type="checkbox" id="rColNotes" checked onchange="renderRoster()"> Notes</label>
+          <label class="col-toggle-pill"><input type="checkbox" id="rColTalked" checked onchange="renderRoster()"> Talked Time &amp; Owner</label>
+        </div>
+      </div>
+
+      <div class="roster-share-bar">
+        <button class="btn btn-green btn-sm" type="button" onclick="exportRosterExcel()">📊 Download Excel (.xls) ↓</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="copyRosterTSV()">📑 Copy for Excel / Sheets</button>
+        <button class="btn btn-primary btn-sm" type="button" onclick="copyRosterText()">📋 Copy Formatted Text</button>
+        <button class="btn btn-green btn-sm" type="button" onclick="shareRosterWhatsApp()">WhatsApp ↗</button>
+        <button class="btn btn-blue btn-sm" type="button" onclick="shareRosterEmail()">✉ Email Roster ↗</button>
+        <button class="btn btn-accent btn-sm" type="button" onclick="nativeShareRoster()">Share ↗</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="exportRosterCSV()">Export CSV ↓</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="printRoster()">🖨 Print / PDF</button>
+      </div>
+    </div>
+
+    <div class="roster-sheet" id="rosterSheet">
+      <div class="roster-sheet-head">
+        <div>
+          <div class="eyebrow"><span class="eyebrow-dot"></span>Fameo Studio Roster · <span id="rosterDateMeta">—</span></div>
+          <h2 class="roster-sheet-title" id="rosterSheetHeading">Fameo Client Roster</h2>
+          <p id="rosterSheetSub" style="font-size:0.86rem;color:var(--text-dim);margin-top:6px;display:none;"></p>
+        </div>
+        <div style="text-align:right;">
+          <span class="badge badge-sentdemo" id="rosterCountBadge">0 clients</span>
+        </div>
+      </div>
+
+      <div id="rosterPreviewTable"></div>
+
+      <div class="roster-text-preview-wrap" style="margin-top:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;">
+          <span class="field-label">Shareable Text Preview (WhatsApp / Email / Chat)</span>
+          <button class="mini-link" type="button" onclick="copyRosterText()">Copy Text</button>
+        </div>
+        <pre class="roster-text-preview" id="rosterTextPreview"></pre>
+      </div>
+    </div>
   </section>
 
   <footer class="studio-footer">
