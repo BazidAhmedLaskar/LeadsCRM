@@ -3,7 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fameo Roster — Shared Client Sheet</title>
+<title>Fameo Roster — Live Client Sheet</title>
+<meta name="description" content="Live Excel-style client roster shared from Fameo CRM. View client details, Instagram handles, outreach status, or sign in to edit live.">
+<meta name="theme-color" content="#FAF8F3">
+
+<!-- Open Graph / WhatsApp / Slack / Social Link Preview -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Fameo CRM">
+<meta property="og:title" content="Fameo Client Roster — Live Sheet">
+<meta property="og:description" content="Open the live Fameo client roster sheet. Logged-in Fameo team members can edit cells directly with real-time CRM sync.">
+<meta property="og:image" content="https://fameoleadscrm.vercel.app/fameo-sheet-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fameo Client Roster — Live Sheet">
+<meta name="twitter:description" content="Live Excel-style client roster from Fameo CRM.">
+<meta name="twitter:image" content="https://fameoleadscrm.vercel.app/fameo-sheet-og.png">
+
 <link rel="icon" type="image/svg+xml" href="https://fameomedia.vercel.app/img/fameo-logo.svg?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +32,7 @@
 <div class="toast" id="toast"></div>
 
 <div class="studio-strip">
-  <span>Fameo · Shared Client Sheet (Read-Only)</span>
+  <span>Fameo · Shared Client Sheet</span>
   <span class="hide-mobile">Guwahati, Assam · 26.14° N · Northeast → Pan India</span>
   <a href="https://fameomedia.vercel.app/" target="_blank" rel="noopener">fameomedia.vercel.app ↗</a>
 </div>
@@ -42,7 +58,12 @@
   </a>
 
   <div class="header-right">
-    <span class="badge badge-sentdemo">View Only</span>
+    <span class="badge badge-sentdemo" id="sharedAccessBadge">View Only</span>
+    <button class="btn btn-primary btn-sm" id="sharedHeaderSignInBtn" type="button">Sign in to Edit</button>
+    <div class="user-chip" id="sharedUserChip" style="display:none;">
+      <img class="user-avatar" id="sharedUserAvatar" src="" alt="">
+      <span id="sharedUserName">—</span>
+    </div>
     <a class="btn btn-ghost btn-sm" href="app.html">Open CRM ↗</a>
   </div>
 </header>
@@ -62,15 +83,20 @@
     </div>
   </div>
 
-  <!-- Optional Sign-In Gate (only shown if Firestore team link requires login) -->
+  <!-- Optional Sign-In Gate (shown if Firestore cloud link requires login) -->
   <div class="roster-controls-card" id="sharedAuthPrompt" style="display:none;text-align:center;">
-    <div class="eyebrow" style="margin-bottom:8px;"><span class="eyebrow-dot"></span>Team Restricted Sheet</div>
-    <h2 class="form-title" style="margin-bottom:8px;">Sign in with your Fameo Google account to view this sheet</h2>
-    <p style="font-size:0.86rem;color:var(--text-dim);margin-bottom:18px;">This roster was shared as a Team Cloud link.</p>
+    <div class="eyebrow" style="margin-bottom:8px;"><span class="eyebrow-dot"></span>Sign In Required</div>
+    <h2 class="form-title" style="margin-bottom:8px;">Sign in with your Fameo Google account to view &amp; edit this sheet</h2>
+    <p style="font-size:0.86rem;color:var(--text-dim);margin-bottom:18px;">Once signed in, you can also edit any cell directly with real-time CRM sync.</p>
     <button class="btn btn-primary" id="sharedGoogleSignInBtn" type="button">Continue with Google ↗</button>
   </div>
 
   <div id="sharedSheetControls" style="display:none;">
+    <div class="shared-mode-banner" id="sharedModeBanner">
+      <span id="sharedModeText">Read-only view · Sign in with your Fameo account to edit cells directly.</span>
+      <button class="btn btn-ghost btn-sm" id="sharedBannerSignInBtn" type="button">Sign in to Edit ↗</button>
+    </div>
+
     <div class="db-filters" style="margin-bottom:16px;">
       <div class="db-filters-top" style="justify-content:space-between;">
         <input class="filter-input" id="sharedSearch" placeholder="Search rows by client name, Instagram ID, phone, email, city, status, or notes…" oninput="renderSharedSheet()">

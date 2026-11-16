@@ -381,10 +381,10 @@
           <input class="form-input" id="rosterNote" placeholder="e.g. Daily outreach update from Guwahati studio — follow-ups prioritized" oninput="renderRoster()">
         </div>
         <div class="field-group">
-          <label class="field-label" for="rosterShareMode">Website Link Access (like Google Sheets)</label>
+          <label class="field-label" for="rosterShareMode">Website Link Mode (like Google Sheets)</label>
           <select class="form-input" id="rosterShareMode" onchange="invalidateShareUrl()">
-            <option value="public">Anyone with the link (No sign-in required)</option>
-            <option value="team">Team Cloud Link (Short ?id= URL)</option>
+            <option value="team" selected>Short Cloud Link (?r=abc123) — Live Edit for Logged-In Users</option>
+            <option value="public">Embedded URL Link (No Cloud Needed · Longer URL)</option>
           </select>
         </div>
       </div>
@@ -405,13 +405,32 @@
       <div class="share-link-box">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
           <span class="eyebrow"><span class="eyebrow-dot"></span>Shareable Website Sheet Link (Google Sheets Style)</span>
-          <span id="rosterLinkStatus" style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-muted);">Ready to generate</span>
+          <span id="rosterLinkStatus" style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-muted);">Ready to generate short link</span>
         </div>
         <div class="share-link-row">
-          <input class="share-url-input" id="rosterShareUrl" readonly placeholder="Click “Create Sheet Link” to generate your shareable website URL…">
-          <button class="btn btn-primary btn-sm" type="button" onclick="generateShareLink()">🔗 Create Sheet Link</button>
+          <input class="share-url-input" id="rosterShareUrl" readonly placeholder="Click “Create Short Link” (or any Share button) to generate your link…">
+          <button class="btn btn-primary btn-sm" type="button" onclick="generateShareLink()">🔗 Create Short Link</button>
           <button class="btn btn-ghost btn-sm" type="button" onclick="copyShareLink()">📋 Copy Link</button>
+          <button class="btn btn-ghost btn-sm" type="button" id="previewSharedBtn" onclick="toggleInlineSheetPreview()">👁 Preview Shared Page</button>
           <button class="btn btn-accent btn-sm" type="button" onclick="openSharedRosterPage()">Open Sheet ↗</button>
+        </div>
+
+        <div class="share-preview-card" id="sharePreviewCard">
+          <img class="share-preview-thumb" src="fameo-sheet-og.png" alt="Fameo Client Roster Preview">
+          <div class="share-preview-body">
+            <div class="share-preview-domain">FAMEO CRM · LIVE GOOGLE-SHEETS-STYLE LINK PREVIEW</div>
+            <div class="share-preview-title" id="sharePreviewTitle">Fameo Client Roster</div>
+            <div class="share-preview-desc" id="sharePreviewDesc">0 clients · Logged-in Fameo users can edit cells live with real-time CRM sync.</div>
+            <div class="share-preview-url" id="sharePreviewUrlText">Short link will appear here when created or shared</div>
+          </div>
+        </div>
+
+        <div class="share-preview-iframe-wrap" id="rosterInlinePreviewWrap" style="display:none;">
+          <div class="share-preview-iframe-head">
+            <span>👁 Live Shared Page Preview (exact view recipients see)</span>
+            <button class="mini-link" type="button" onclick="toggleInlineSheetPreview(false)">Close Preview ✕</button>
+          </div>
+          <iframe class="share-preview-iframe" id="rosterInlinePreviewFrame" title="Shared Roster Live Preview"></iframe>
         </div>
       </div>
 
