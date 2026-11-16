@@ -174,6 +174,14 @@ function formatHandleLink(handle) {
   return `https://instagram.com/${raw}`;
 }
 
+function normalizeHandle(handle) {
+  let raw = String(handle || '').trim().toLowerCase();
+  raw = raw.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '');
+  raw = raw.split('?')[0].split('#')[0];
+  raw = raw.replace(/^@+/, '').replace(/\/+$/, '');
+  return raw;
+}
+
 function statusClass(status) {
   return String(status || 'Not Called').toLowerCase().replace(/\s+/g, '');
 }
@@ -242,8 +250,20 @@ async function addManually() {
   const city = document.getElementById('mCity')?.value.trim() || '';
   const handle = document.getElementById('mHandle')?.value.trim() || '';
 
-  if (!name || (!phone && !email)) {
-    showToast('Client name and at least a phone number or email are required', 'var(--red)');
+  if (!name || !handle) {
+    showToast('Client name and Instagram ID are required', 'var(--red)');
+    return;
+  }
+
+  const normalizedHandle = normalizeHandle(handle);
+  const existingByHandle = allLeads.find(lead => {
+    const existingNorm = normalizeHandle(lead.handle);
+    return normalizedHandle && existingNorm && existingNorm === normalizedHandle;
+  });
+
+  if (existingByHandle) {
+    const status = getLeadStatus(existingByHandle);
+    showToast(`${existingByHandle.name} (${existingByHandle.handle}) is already in roster (${status})`, 'var(--orange)');
     return;
   }
 
@@ -589,6 +609,7 @@ function getFilteredLeads() {
 
     if (f.budgetFilter && (lead.budget || '') !== f.budgetFilter) return false;
 
+    if (f.contactFilter === 'handle' && !(lead.handle || '').trim()) return false;
     if (f.contactFilter === 'email' && !(lead.email || '').trim()) return false;
     if (f.contactFilter === 'phone' && !(lead.phone || '').trim()) return false;
     if (f.contactFilter === 'both' && (!(lead.email || '').trim() || !(lead.phone || '').trim())) return false;
@@ -712,7 +733,7 @@ function renderRecentAdds() {
       ${recent.map((lead) => {
         const status = getLeadStatus(lead);
         const typeLabel = lead.leadType && lead.leadType !== 'Creator' ? lead.leadType : '';
-        const subParts = [lead.phone, lead.email, lead.city, typeLabel].filter(Boolean).map(escapeHtml);
+        const subParts = [lead.handle, lead.phone, lead.email, lead.city, typeLabel].filter(Boolean).map(escapeHtml);
         return `
           <div class="recent-row">
             <div>
@@ -805,6 +826,10 @@ function renderDB() {
             </div>
             <h3 class="shop-name">${escapeHtml(lead.name)}</h3>
             <div class="contact-row">
+              ${lead.handle ? `
+                <a class="shop-phone" href="${escapeHtml(handleHref)}" target="_blank" rel="noopener">📸 ${escapeHtml(lead.handle)} ↗</a>
+                <button class="mini-link" type="button" onclick="copyText('${escapeHtml(lead.handle)}', 'Instagram ID')">Copy</button>
+              ` : ''}
               ${lead.phone ? `
                 <a class="shop-phone" href="tel:${safePhone}">📞 ${safePhone}</a>
                 <button class="mini-link" type="button" onclick="copyText('${safePhone}', 'phone')">Copy</button>
@@ -1008,8 +1033,8 @@ async function saveLeadDetails(id) {
   const city = document.getElementById(`edit-city-${id}`)?.value.trim() || '';
   const leadType = document.getElementById(`edit-type-${id}`)?.value.trim() || '';
 
-  if (!name || (!phone && !email)) {
-    showToast('Client name and phone or email are required', 'var(--red)');
+  if (!name || !handle) {
+    showToast('Client name and Instagram ID are required', 'var(--red)');
     return;
   }
 
@@ -1391,6 +1416,158 @@ function renderRoster() {
   if (textPreview) {
     textPreview.textContent = buildRosterPlainText(leads, cfg);
   }
+  invalidateShareUrl();
+}
+
+let currentShareUrl = '';
+
+function invalidateShareUrl() {
+  currentShareUrl = '';
+  const urlInput = document.getElementById('rosterShareUrl');
+  const statusEl = document.getElementById('rosterLinkStatus');
+  if (urlInput) urlInput.value = '';
+  if (statusEl) statusEl.textContent = 'Ready to generate';
+}
+
+function toBase64Url(bytes) {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function encodePublicSheetHash(payload) {
+  const json = JSON.stringify(payload);
+  const rawBytes = new TextEncoder().encode(json);
+  if (typeof CompressionStream !== 'undefined') {
+    const cs = new CompressionStream('deflate-raw');
+    const writer = cs.writable.getWriter();
+    writer.write(rawBytes);
+    writer.close();
+    const compressed = new Uint8Array(await new Response(cs.readable).arrayBuffer());
+    return '#s=' + toBase64Url(compressed);
+  }
+  return '#d=' + toBase64Url(rawBytes);
+}
+
+function buildShareSnapshot(leads, cfg) {
+  const actorName = auth.currentUser?.displayName || auth.currentUser?.email || 'Fameo Team';
+  const compactLeads = leads.map(lead => {
+    const displayType = lead.leadType && lead.leadType !== 'Creator' ? lead.leadType : '';
+    const dt = getTalkedDate(lead) || getActivityDate(lead);
+    const dtStr = dt ? dt.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    const owner = (lead.lastTalkedByName || lead.lastUpdatedByName || lead.createdByName || 'Team').split(' ')[0];
+    return [
+      lead.name || '',
+      lead.handle || '',
+      lead.phone || '',
+      lead.email || '',
+      displayType,
+      lead.category || '',
+      lead.budget || '',
+      lead.city || '',
+      getLeadStatus(lead),
+      owner,
+      dtStr,
+      lead.notes || '',
+      isTalkedToday(lead) ? 1 : 0
+    ];
+  });
+
+  return {
+    t: cfg.title,
+    n: cfg.note,
+    sb: actorName,
+    ca: new Date().toISOString(),
+    c: {
+      phone: cfg.showPhone,
+      email: cfg.showEmail,
+      status: cfg.showStatus,
+      category: cfg.showCategory,
+      city: cfg.showCity,
+      notes: cfg.showNotes,
+      talked: cfg.showTalked
+    },
+    l: compactLeads
+  };
+}
+
+async function generateShareLink(silent = false) {
+  if (currentShareUrl) return currentShareUrl;
+
+  const cfg = getRosterConfig();
+  const leads = getRosterLeads(cfg.source);
+  if (!leads.length) {
+    showToast('No clients in this roster to share', 'var(--orange)');
+    return '';
+  }
+
+  const mode = document.getElementById('rosterShareMode')?.value || 'public';
+  const statusEl = document.getElementById('rosterLinkStatus');
+  const urlInput = document.getElementById('rosterShareUrl');
+  const baseViewerUrl = new URL('roster.html', window.location.href).href;
+
+  if (statusEl) statusEl.textContent = 'Creating link…';
+
+  const snapshot = buildShareSnapshot(leads, cfg);
+
+  if (mode === 'team') {
+    try {
+      const docRef = await addDoc(collection(db, 'rosters'), {
+        title: cfg.title,
+        note: cfg.note,
+        sharedBy: snapshot.sb,
+        createdAt: new Date(),
+        createdBy: auth.currentUser?.uid || '',
+        createdByName: snapshot.sb,
+        columns: snapshot.c,
+        l: snapshot.l
+      });
+      currentShareUrl = `${baseViewerUrl}?id=${encodeURIComponent(docRef.id)}`;
+      if (urlInput) urlInput.value = currentShareUrl;
+      if (statusEl) statusEl.textContent = `Team link ready (${leads.length} clients)`;
+      if (!silent) showToast('Team sheet link created!', 'var(--green)');
+      return currentShareUrl;
+    } catch (err) {
+      console.warn('Firestore rosters write failed, falling back to public link:', err);
+    }
+  }
+
+  try {
+    const hash = await encodePublicSheetHash(snapshot);
+    currentShareUrl = `${baseViewerUrl}${hash}`;
+    if (urlInput) urlInput.value = currentShareUrl;
+    if (statusEl) statusEl.textContent = `Public link ready (${leads.length} clients · no login needed)`;
+    if (!silent) showToast('Website sheet link created!', 'var(--green)');
+    return currentShareUrl;
+  } catch (error) {
+    console.error('Error generating share link:', error);
+    if (statusEl) statusEl.textContent = 'Could not generate link';
+    showToast('Failed to generate share link', 'var(--red)');
+    return '';
+  }
+}
+
+async function copyShareLink() {
+  const url = await generateShareLink(true);
+  if (!url) return;
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('Website sheet link copied!', 'var(--green)');
+  } catch {
+    const urlInput = document.getElementById('rosterShareUrl');
+    if (urlInput) {
+      urlInput.select();
+    }
+    showToast('Link generated — copy from box', 'var(--ink)');
+  }
+}
+
+async function openSharedRosterPage() {
+  const url = await generateShareLink(true);
+  if (!url) return;
+  window.open(url, '_blank', 'noopener');
 }
 
 async function copyRosterText() {
@@ -1409,29 +1586,30 @@ async function copyRosterText() {
   }
 }
 
-function shareRosterWhatsApp() {
+async function shareRosterWhatsApp() {
   const cfg = getRosterConfig();
   const leads = getRosterLeads(cfg.source);
   if (!leads.length) {
     showToast('No clients in this roster to share', 'var(--orange)');
     return;
   }
-  let text = buildRosterPlainText(leads, cfg);
-  if (text.length > 3800) {
-    text = text.slice(0, 3750) + '\n\n…(truncated — use Copy Formatted Roster or CSV for full list)';
-  }
-  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+  const url = await generateShareLink(true);
+  if (!url) return;
+  const msg = `${cfg.title} (${leads.length} clients)\nView live Fameo sheet:\n${url}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
 }
 
-function shareRosterEmail() {
+async function shareRosterEmail() {
   const cfg = getRosterConfig();
   const leads = getRosterLeads(cfg.source);
   if (!leads.length) {
     showToast('No clients in this roster to email', 'var(--orange)');
     return;
   }
-  const text = buildRosterPlainText(leads, cfg);
-  const mailUrl = `mailto:?subject=${encodeURIComponent(cfg.title)}&body=${encodeURIComponent(text)}`;
+  const url = await generateShareLink(true);
+  if (!url) return;
+  const body = `Hi,\n\nHere is the live Fameo client roster (${leads.length} clients):\n${url}\n\n${cfg.note ? 'Note: ' + cfg.note + '\n\n' : ''}Best,\nFameo Team`;
+  const mailUrl = `mailto:?subject=${encodeURIComponent(cfg.title)}&body=${encodeURIComponent(body)}`;
   window.location.href = mailUrl;
 }
 
@@ -1442,17 +1620,22 @@ async function nativeShareRoster() {
     showToast('No clients in this roster to share', 'var(--orange)');
     return;
   }
-  const text = buildRosterPlainText(leads, cfg);
+  const url = await generateShareLink(true);
+  if (!url) return;
   if (navigator.share) {
     try {
-      await navigator.share({ title: cfg.title, text });
-      showToast('Roster shared', 'var(--green)');
+      await navigator.share({
+        title: cfg.title,
+        text: `${cfg.title} (${leads.length} clients) — Fameo Sheet`,
+        url
+      });
+      showToast('Website sheet link shared', 'var(--green)');
       return;
     } catch (err) {
       if (err && err.name === 'AbortError') return;
     }
   }
-  await copyRosterText();
+  await copyShareLink();
 }
 
 function exportRosterCSV() {
@@ -1708,14 +1891,8 @@ async function updateExcelCell(id, field, rawValue) {
     renderRoster();
     return;
   }
-  if (field === 'phone' && !value && !(existing?.email || '').trim()) {
-    showToast('Phone or Email is required', 'var(--red)');
-    renderDB();
-    renderRoster();
-    return;
-  }
-  if (field === 'email' && !value && !(existing?.phone || '').trim()) {
-    showToast('Phone or Email is required', 'var(--red)');
+  if (field === 'handle' && !value) {
+    showToast('Instagram ID cannot be empty', 'var(--red)');
     renderDB();
     renderRoster();
     return;
@@ -1928,5 +2105,9 @@ window.updateExcelCell = updateExcelCell;
 window.exportRosterExcel = exportRosterExcel;
 window.exportFilteredExcel = exportFilteredExcel;
 window.copyRosterTSV = copyRosterTSV;
+window.generateShareLink = generateShareLink;
+window.copyShareLink = copyShareLink;
+window.openSharedRosterPage = openSharedRosterPage;
+window.invalidateShareUrl = invalidateShareUrl;
 
 console.log('✅ Fameo CRM initialized');
