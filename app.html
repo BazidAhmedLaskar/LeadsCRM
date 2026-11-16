@@ -192,6 +192,7 @@
       </div>
       <div class="page-actions">
         <button class="btn btn-primary btn-sm" type="button" onclick="switchTab('search')">+ Add Client ↗</button>
+        <button class="btn btn-green btn-sm" type="button" onclick="exportFilteredExcel()">📊 Excel (.xls) ↓</button>
         <button class="btn btn-ghost btn-sm" type="button" onclick="exportCSV()">Export CSV ↓</button>
         <button class="btn btn-ghost btn-sm" type="button" onclick="loadDatabase()">↺ Refresh</button>
       </div>
@@ -308,15 +309,21 @@
         </select>
       </div>
       <div class="db-filters-top" style="justify-content:space-between;">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <label class="field-label" for="dbSort">Sort</label>
-          <select class="filter-select" id="dbSort" onchange="renderDB()" style="width:auto;min-width:190px;">
-            <option value="activityDesc">Latest Activity First</option>
-            <option value="createdDesc">Newly Added First</option>
-            <option value="createdAsc">Oldest Added First</option>
-            <option value="nameAsc">Client Name (A → Z)</option>
-            <option value="status">Status</option>
-          </select>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <label class="field-label" for="dbSort">Sort</label>
+            <select class="filter-select" id="dbSort" onchange="renderDB()" style="width:auto;min-width:190px;">
+              <option value="activityDesc">Latest Activity First</option>
+              <option value="createdDesc">Newly Added First</option>
+              <option value="createdAsc">Oldest Added First</option>
+              <option value="nameAsc">Client Name (A → Z)</option>
+              <option value="status">Status</option>
+            </select>
+          </div>
+          <div class="view-switcher" role="group" aria-label="Database view mode">
+            <button class="view-switch-btn active" id="viewBtnCards" type="button" onclick="setDbViewMode('cards')">Cards</button>
+            <button class="view-switch-btn" id="viewBtnExcel" type="button" onclick="setDbViewMode('excel')">Excel Sheet</button>
+          </div>
         </div>
         <span class="results-meta-bar" id="dbResultCount" style="margin-bottom:0;">Showing — clients</span>
       </div>
@@ -386,7 +393,9 @@
       </div>
 
       <div class="roster-share-bar">
-        <button class="btn btn-primary btn-sm" type="button" onclick="copyRosterText()">📋 Copy Formatted Roster</button>
+        <button class="btn btn-green btn-sm" type="button" onclick="exportRosterExcel()">📊 Download Excel (.xls) ↓</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="copyRosterTSV()">📑 Copy for Excel / Sheets</button>
+        <button class="btn btn-primary btn-sm" type="button" onclick="copyRosterText()">📋 Copy Formatted Text</button>
         <button class="btn btn-green btn-sm" type="button" onclick="shareRosterWhatsApp()">WhatsApp ↗</button>
         <button class="btn btn-blue btn-sm" type="button" onclick="shareRosterEmail()">✉ Email Roster ↗</button>
         <button class="btn btn-accent btn-sm" type="button" onclick="nativeShareRoster()">Share ↗</button>

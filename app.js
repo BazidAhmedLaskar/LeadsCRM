@@ -320,6 +320,7 @@ async function addManually() {
 
 let allLeads = [];
 let todayListExpanded = false;
+let dbViewMode = 'cards';
 const selectedRosterIds = new Set();
 
 async function loadDatabase() {
@@ -756,6 +757,15 @@ function renderDB() {
         <p>${allLeads.length === 0 ? 'Add your first brand or client lead to get the Fameo roster moving.' : 'Try clearing one or more filters to view your clients.'}</p>
       </div>
     `;
+    return;
+  }
+
+  if (dbViewMode === 'excel') {
+    container.innerHTML = renderExcelSheet(filtered, {
+      editable: true,
+      showActions: true,
+      sheetTitle: 'Fameo_Client_Pipeline.xls'
+    });
     return;
   }
 
@@ -1362,75 +1372,18 @@ function renderRoster() {
         </div>
       `;
     } else {
-      tableWrap.innerHTML = `
-        <div class="roster-table-wrap">
-          <table class="roster-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Client</th>
-                ${cfg.showPhone || cfg.showEmail ? '<th>Contact</th>' : ''}
-                ${cfg.showCategory ? '<th>Category &amp; Budget</th>' : ''}
-                ${cfg.showCity ? '<th>City &amp; Handle</th>' : ''}
-                ${cfg.showStatus ? '<th>Status</th>' : ''}
-                ${cfg.showTalked ? '<th>Activity</th>' : ''}
-                ${cfg.showNotes ? '<th>Notes</th>' : ''}
-                ${cfg.source === 'selected' ? '<th class="roster-remove-col"></th>' : ''}
-              </tr>
-            </thead>
-            <tbody>
-              ${leads.map((lead, idx) => {
-                const status = getLeadStatus(lead);
-                const displayType = lead.leadType && lead.leadType !== 'Creator' ? lead.leadType : '';
-                const dt = getTalkedDate(lead) || getActivityDate(lead);
-                const dtStr = dt ? dt.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
-                const owner = lead.lastTalkedByName || lead.lastUpdatedByName || lead.createdByName || 'Team';
-                const safeId = escapeHtml(lead.id);
-
-                return `
-                  <tr>
-                    <td style="font-family:var(--font-mono);color:var(--accent);font-weight:600;">${String(idx + 1).padStart(2, '0')}</td>
-                    <td>
-                      <strong style="color:var(--ink);">${escapeHtml(lead.name)}</strong>
-                      ${displayType ? `<div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted);">${escapeHtml(displayType)}</div>` : ''}
-                    </td>
-                    ${cfg.showPhone || cfg.showEmail ? `
-                      <td style="font-family:var(--font-mono);font-size:0.77rem;">
-                        ${cfg.showPhone && lead.phone ? `<div><a href="tel:${escapeHtml(lead.phone)}" style="color:var(--ink);text-decoration:none;">${escapeHtml(lead.phone)}</a></div>` : ''}
-                        ${cfg.showEmail && lead.email ? `<div><a href="${formatMailtoLink(lead)}" style="color:var(--text-dim);text-decoration:none;">${escapeHtml(lead.email)}</a></div>` : ''}
-                        ${(!cfg.showPhone || !lead.phone) && (!cfg.showEmail || !lead.email) ? '—' : ''}
-                      </td>
-                    ` : ''}
-                    ${cfg.showCategory ? `
-                      <td>
-                        ${lead.category ? `<div>${escapeHtml(lead.category)}</div>` : ''}
-                        ${lead.budget ? `<div style="font-family:var(--font-mono);font-size:0.73rem;color:var(--text-muted);">${escapeHtml(lead.budget)}</div>` : ''}
-                        ${!lead.category && !lead.budget ? '—' : ''}
-                      </td>
-                    ` : ''}
-                    ${cfg.showCity ? `
-                      <td>
-                        ${lead.city ? `<div>${escapeHtml(lead.city)}</div>` : ''}
-                        ${lead.handle ? `<div style="font-family:var(--font-mono);font-size:0.73rem;">${escapeHtml(lead.handle)}</div>` : ''}
-                        ${!lead.city && !lead.handle ? '—' : ''}
-                      </td>
-                    ` : ''}
-                    ${cfg.showStatus ? `<td><span class="badge badge-${statusClass(status)}">${escapeHtml(status)}</span></td>` : ''}
-                    ${cfg.showTalked ? `
-                      <td style="font-family:var(--font-mono);font-size:0.73rem;">
-                        <div>${escapeHtml(owner.split(' ')[0])}</div>
-                        <div style="color:var(--text-muted);">${escapeHtml(dtStr)}</div>
-                      </td>
-                    ` : ''}
-                    ${cfg.showNotes ? `<td style="max-width:240px;white-space:pre-wrap;">${lead.notes ? escapeHtml(lead.notes) : '<span style="color:var(--text-muted);">—</span>'}</td>` : ''}
-                    ${cfg.source === 'selected' ? `<td class="roster-remove-col"><button class="mini-link" type="button" onclick="toggleRosterSelect('${safeId}')">✕</button></td>` : ''}
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
-      `;
+      tableWrap.innerHTML = renderExcelSheet(leads, {
+        showPhone: cfg.showPhone,
+        showEmail: cfg.showEmail,
+        showCategory: cfg.showCategory,
+        showCity: cfg.showCity,
+        showStatus: cfg.showStatus,
+        showTalked: cfg.showTalked,
+        showNotes: cfg.showNotes,
+        editable: true,
+        showRemove: cfg.source === 'selected',
+        sheetTitle: cfg.title
+      });
     }
   }
 
@@ -1556,6 +1509,384 @@ function printRoster() {
   setTimeout(() => window.print(), 120);
 }
 
+// ═════════════════════════════
+// Excel Sheet View, Inline Edits & Excel (.xls) / TSV Export
+// ═════════════════════════════
+
+function setDbViewMode(mode) {
+  dbViewMode = mode === 'excel' ? 'excel' : 'cards';
+  document.getElementById('viewBtnCards')?.classList.toggle('active', dbViewMode === 'cards');
+  document.getElementById('viewBtnExcel')?.classList.toggle('active', dbViewMode === 'excel');
+  renderDB();
+}
+
+function getExcelColLetter(idx) {
+  let n = idx;
+  let s = '';
+  while (n >= 0) {
+    s = String.fromCharCode((n % 26) + 65) + s;
+    n = Math.floor(n / 26) - 1;
+  }
+  return s;
+}
+
+function renderExcelSheet(leads, opts = {}) {
+  const showPhone = opts.showPhone ?? true;
+  const showEmail = opts.showEmail ?? true;
+  const showCategory = opts.showCategory ?? true;
+  const showCity = opts.showCity ?? true;
+  const showStatus = opts.showStatus ?? true;
+  const showTalked = opts.showTalked ?? true;
+  const showNotes = opts.showNotes ?? true;
+  const editable = opts.editable ?? true;
+  const showActions = opts.showActions ?? false;
+  const showRemove = opts.showRemove ?? false;
+  const sheetTitle = opts.sheetTitle || 'Fameo_Clients.xls';
+
+  const cols = [{ key: 'name', label: 'Client Name' }];
+  if (showPhone) cols.push({ key: 'phone', label: 'Phone' });
+  if (showEmail) cols.push({ key: 'email', label: 'Email' });
+  if (showCategory) {
+    cols.push({ key: 'leadType', label: 'Type' });
+    cols.push({ key: 'category', label: 'Category' });
+    cols.push({ key: 'budget', label: 'Budget' });
+  }
+  if (showCity) {
+    cols.push({ key: 'city', label: 'City' });
+    cols.push({ key: 'handle', label: 'Handle / Web' });
+  }
+  if (showStatus) cols.push({ key: 'status', label: 'Status' });
+  if (showTalked) {
+    cols.push({ key: 'owner', label: 'Owner' });
+    cols.push({ key: 'activity', label: 'Activity Time' });
+  }
+  if (showNotes) cols.push({ key: 'notes', label: 'Notes' });
+  if (showActions) cols.push({ key: 'actions', label: 'Quick Actions' });
+
+  const talkedCount = leads.filter(isTalkedToday).length;
+  const calledCount = leads.filter(l => getLeadStatus(l) === 'Called').length;
+  const followupCount = leads.filter(l => getLeadStatus(l) === 'Follow Up').length;
+  const statusOptions = ['Not Called', 'Called', 'Follow Up', 'Not Picked Call', 'Not Interested', 'Sent Demo'];
+
+  return `
+    <div class="excel-wrap">
+      <div class="excel-toolbar">
+        <div class="excel-fx-bar">
+          <span class="excel-fx-tag">fx</span>
+          <span><strong>${escapeHtml(sheetTitle)}</strong> · ${leads.length} rows × ${cols.length} cols${editable ? ' · Click any cell to edit & auto-save' : ''}</span>
+        </div>
+        <div>Talked Today: <strong>${talkedCount}</strong> · Called: <strong>${calledCount}</strong> · Follow Up: <strong>${followupCount}</strong></div>
+      </div>
+      <table class="excel-table">
+        <thead>
+          <tr class="excel-col-letters">
+            <th class="excel-row-num"></th>
+            ${cols.map((_, i) => `<th>${getExcelColLetter(i)}</th>`).join('')}
+            ${showRemove ? '<th class="roster-remove-col"></th>' : ''}
+          </tr>
+          <tr class="excel-headers">
+            <th class="excel-row-num">#</th>
+            ${cols.map(c => `<th>${escapeHtml(c.label)}</th>`).join('')}
+            ${showRemove ? '<th class="roster-remove-col"></th>' : ''}
+          </tr>
+        </thead>
+        <tbody>
+          ${leads.map((lead, idx) => {
+            const safeId = escapeHtml(lead.id);
+            const status = getLeadStatus(lead);
+            const displayType = lead.leadType && lead.leadType !== 'Creator' ? lead.leadType : '';
+            const dt = getTalkedDate(lead) || getActivityDate(lead);
+            const dtStr = dt ? dt.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+            const owner = lead.lastTalkedByName || lead.lastUpdatedByName || lead.createdByName || 'Team';
+            const isSelected = selectedRosterIds.has(lead.id);
+
+            const cells = [];
+            cells.push(editable
+              ? `<td><input class="excel-input" style="font-weight:600;min-width:155px;" value="${escapeHtml(lead.name || '')}" onchange="updateExcelCell('${safeId}', 'name', this.value)"></td>`
+              : `<td class="excel-cell"><strong>${escapeHtml(lead.name || '')}</strong></td>`);
+
+            if (showPhone) {
+              cells.push(editable
+                ? `<td><input class="excel-input excel-input-mono" style="min-width:130px;" value="${escapeHtml(lead.phone || '')}" onchange="updateExcelCell('${safeId}', 'phone', this.value)"></td>`
+                : `<td class="excel-cell excel-input-mono">${lead.phone ? `<a href="tel:${escapeHtml(lead.phone)}" style="color:inherit;text-decoration:none;">${escapeHtml(lead.phone)}</a>` : '—'}</td>`);
+            }
+
+            if (showEmail) {
+              cells.push(editable
+                ? `<td><input class="excel-input excel-input-mono" style="min-width:170px;" type="email" value="${escapeHtml(lead.email || '')}" placeholder="email@brand.com" onchange="updateExcelCell('${safeId}', 'email', this.value)"></td>`
+                : `<td class="excel-cell excel-input-mono">${lead.email ? `<a href="${formatMailtoLink(lead)}" style="color:inherit;text-decoration:none;">${escapeHtml(lead.email)}</a>` : '—'}</td>`);
+            }
+
+            if (showCategory) {
+              cells.push(editable
+                ? `<td><input class="excel-input" style="min-width:105px;" value="${escapeHtml(displayType)}" placeholder="Brand" onchange="updateExcelCell('${safeId}', 'leadType', this.value)"></td>`
+                : `<td class="excel-cell">${escapeHtml(displayType || '—')}</td>`);
+              cells.push(editable
+                ? `<td><input class="excel-input" style="min-width:120px;" value="${escapeHtml(lead.category || '')}" placeholder="Category" onchange="updateExcelCell('${safeId}', 'category', this.value)"></td>`
+                : `<td class="excel-cell">${escapeHtml(lead.category || '—')}</td>`);
+              cells.push(editable
+                ? `<td><input class="excel-input excel-input-mono" style="min-width:130px;" value="${escapeHtml(lead.budget || '')}" placeholder="Budget" onchange="updateExcelCell('${safeId}', 'budget', this.value)"></td>`
+                : `<td class="excel-cell excel-input-mono">${escapeHtml(lead.budget || '—')}</td>`);
+            }
+
+            if (showCity) {
+              cells.push(editable
+                ? `<td><input class="excel-input" style="min-width:110px;" value="${escapeHtml(lead.city || '')}" placeholder="City" onchange="updateExcelCell('${safeId}', 'city', this.value)"></td>`
+                : `<td class="excel-cell">${escapeHtml(lead.city || '—')}</td>`);
+              cells.push(editable
+                ? `<td><input class="excel-input excel-input-mono" style="min-width:125px;" value="${escapeHtml(lead.handle || '')}" placeholder="@handle" onchange="updateExcelCell('${safeId}', 'handle', this.value)"></td>`
+                : `<td class="excel-cell excel-input-mono">${escapeHtml(lead.handle || '—')}</td>`);
+            }
+
+            if (showStatus) {
+              cells.push(editable
+                ? `<td>
+                    <select class="excel-select" style="min-width:132px;font-weight:600;" onchange="updateExcelCell('${safeId}', 'status', this.value)">
+                      ${statusOptions.map(opt => `<option value="${escapeHtml(opt)}" ${opt === status ? 'selected' : ''}>${escapeHtml(opt)}</option>`).join('')}
+                    </select>
+                  </td>`
+                : `<td class="excel-cell"><span class="badge badge-${statusClass(status)}">${escapeHtml(status)}</span></td>`);
+            }
+
+            if (showTalked) {
+              cells.push(`<td class="excel-cell">${escapeHtml(owner.split(' ')[0])}</td>`);
+              cells.push(`<td class="excel-cell excel-input-mono">${escapeHtml(dtStr)}</td>`);
+            }
+
+            if (showNotes) {
+              cells.push(editable
+                ? `<td><input class="excel-input" style="min-width:190px;" value="${escapeHtml(lead.notes || '')}" placeholder="Add note…" onchange="updateExcelCell('${safeId}', 'notes', this.value)"></td>`
+                : `<td class="excel-cell excel-cell-wide">${escapeHtml(lead.notes || '—')}</td>`);
+            }
+
+            if (showActions) {
+              cells.push(`
+                <td>
+                  <div class="excel-action-links">
+                    <button class="excel-mini-btn" type="button" onclick="toggleRosterSelect('${safeId}')">${isSelected ? '✓ Roster' : '+ Roster'}</button>
+                    ${lead.phone ? `<a class="excel-mini-btn" href="${formatWhatsAppLink(lead.phone)}" target="_blank" rel="noopener">WA</a>` : ''}
+                    ${lead.email ? `<a class="excel-mini-btn" href="${formatMailtoLink(lead)}">Mail</a>` : ''}
+                    <button class="excel-mini-btn" type="button" onclick="deleteLead('${safeId}')" style="color:var(--red);">Del</button>
+                  </div>
+                </td>
+              `);
+            }
+
+            return `
+              <tr>
+                <td class="excel-row-num">${idx + 1}</td>
+                ${cells.join('')}
+                ${showRemove ? `<td class="roster-remove-col" style="padding:4px 8px;text-align:center;"><button class="excel-mini-btn" type="button" onclick="toggleRosterSelect('${safeId}')">✕</button></td>` : ''}
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+        <tfoot>
+          <tr class="excel-footer-row">
+            <td class="excel-row-num">Σ</td>
+            <td colspan="${cols.length + (showRemove ? 1 : 0)}">
+              TOTAL: ${leads.length} CLIENTS · TALKED TODAY: ${talkedCount} · CALLED: ${calledCount} · FOLLOW UP: ${followupCount}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  `;
+}
+
+async function updateExcelCell(id, field, rawValue) {
+  const value = String(rawValue ?? '').trim();
+  if (field === 'status') {
+    await updateStatus(id, value);
+    return;
+  }
+
+  const existing = allLeads.find(l => l.id === id);
+  if (field === 'name' && !value) {
+    showToast('Client name cannot be empty', 'var(--red)');
+    renderDB();
+    renderRoster();
+    return;
+  }
+  if (field === 'phone' && !value && !(existing?.email || '').trim()) {
+    showToast('Phone or Email is required', 'var(--red)');
+    renderDB();
+    renderRoster();
+    return;
+  }
+  if (field === 'email' && !value && !(existing?.phone || '').trim()) {
+    showToast('Phone or Email is required', 'var(--red)');
+    renderDB();
+    renderRoster();
+    return;
+  }
+
+  try {
+    const now = new Date();
+    await updateDoc(doc(db, 'leads', id), {
+      [field]: value,
+      updatedAt: now,
+      lastActivityAt: now
+    });
+    showToast(`Saved ${field}`, 'var(--green)');
+    loadDatabase();
+  } catch (error) {
+    console.error('Error saving cell:', error);
+    showToast('Failed to save change', 'var(--red)');
+  }
+}
+
+function downloadExcelWorkbook(leads, cfg, filename) {
+  if (!leads.length) {
+    showToast('No clients to export to Excel', 'var(--orange)');
+    return;
+  }
+
+  const headers = ['#', 'Client Name'];
+  if (cfg.showPhone) headers.push('Phone');
+  if (cfg.showEmail) headers.push('Email');
+  if (cfg.showCategory) headers.push('Client Type', 'Category', 'Budget');
+  if (cfg.showCity) headers.push('City', 'Handle / Website');
+  if (cfg.showStatus) headers.push('Status');
+  if (cfg.showTalked) headers.push('Talked Today', 'Owner', 'Activity Time');
+  if (cfg.showNotes) headers.push('Notes');
+
+  const bodyRows = leads.map((lead, idx) => {
+    const displayType = lead.leadType && lead.leadType !== 'Creator' ? lead.leadType : '';
+    const dt = getTalkedDate(lead) || getActivityDate(lead);
+    const dtStr = dt ? dt.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    const owner = lead.lastTalkedByName || lead.lastUpdatedByName || lead.createdByName || '';
+
+    const tds = [
+      `<td style="text-align:center;">${idx + 1}</td>`,
+      `<td><b>${escapeHtml(lead.name || '')}</b></td>`
+    ];
+    if (cfg.showPhone) tds.push(`<td style="mso-number-format:'\\@';">${escapeHtml(lead.phone || '')}</td>`);
+    if (cfg.showEmail) tds.push(`<td>${escapeHtml(lead.email || '')}</td>`);
+    if (cfg.showCategory) {
+      tds.push(`<td>${escapeHtml(displayType)}</td>`);
+      tds.push(`<td>${escapeHtml(lead.category || '')}</td>`);
+      tds.push(`<td>${escapeHtml(lead.budget || '')}</td>`);
+    }
+    if (cfg.showCity) {
+      tds.push(`<td>${escapeHtml(lead.city || '')}</td>`);
+      tds.push(`<td>${escapeHtml(lead.handle || '')}</td>`);
+    }
+    if (cfg.showStatus) tds.push(`<td>${escapeHtml(getLeadStatus(lead))}</td>`);
+    if (cfg.showTalked) {
+      tds.push(`<td>${isTalkedToday(lead) ? 'Yes' : 'No'}</td>`);
+      tds.push(`<td>${escapeHtml(owner)}</td>`);
+      tds.push(`<td>${escapeHtml(dtStr)}</td>`);
+    }
+    if (cfg.showNotes) tds.push(`<td>${escapeHtml(lead.notes || '')}</td>`);
+    return `<tr>${tds.join('')}</tr>`;
+  }).join('');
+
+  const html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:x="urn:schemas-microsoft-com:office:excel"
+          xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="UTF-8">
+      <!--[if gte mso 9]><xml>
+        <x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+          <x:Name>Fameo Roster</x:Name>
+          <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+        </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook>
+      </xml><![endif]-->
+      <style>
+        table { border-collapse: collapse; font-family: Calibri, Arial, sans-serif; font-size: 11pt; }
+        th { background: #1D6F42; color: #FFFFFF; font-weight: bold; border: 1px solid #B8C2CC; padding: 6px 10px; text-align: left; }
+        td { border: 1px solid #D0D7DE; padding: 5px 10px; vertical-align: top; }
+        .title { font-size: 14pt; font-weight: bold; color: #141413; border: none; padding: 8px 0; }
+      </style>
+    </head>
+    <body>
+      <table>
+        <tr><td class="title" colspan="${headers.length}">${escapeHtml(cfg.title || 'Fameo Client Roster')}</td></tr>
+        <tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr>
+        ${bodyRows}
+      </table>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`Downloaded Excel (${leads.length} clients)`, 'var(--green)');
+}
+
+function exportRosterExcel() {
+  const cfg = getRosterConfig();
+  const leads = getRosterLeads(cfg.source);
+  downloadExcelWorkbook(leads, cfg, `fameo-roster-${new Date().toISOString().slice(0, 10)}.xls`);
+}
+
+function exportFilteredExcel() {
+  const leads = getFilteredLeads();
+  downloadExcelWorkbook(leads, {
+    title: `Fameo Client Pipeline — ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`,
+    showPhone: true,
+    showEmail: true,
+    showCategory: true,
+    showCity: true,
+    showStatus: true,
+    showTalked: true,
+    showNotes: true
+  }, `fameo-pipeline-${new Date().toISOString().slice(0, 10)}.xls`);
+}
+
+async function copyRosterTSV() {
+  const cfg = getRosterConfig();
+  const leads = getRosterLeads(cfg.source);
+  if (!leads.length) {
+    showToast('No clients in this roster to copy', 'var(--orange)');
+    return;
+  }
+
+  const clean = (v) => String(v ?? '').replace(/[\t\r\n]+/g, ' ').trim();
+  const headers = ['#', 'Client Name'];
+  if (cfg.showPhone) headers.push('Phone');
+  if (cfg.showEmail) headers.push('Email');
+  if (cfg.showCategory) headers.push('Client Type', 'Category', 'Budget');
+  if (cfg.showCity) headers.push('City', 'Handle');
+  if (cfg.showStatus) headers.push('Status');
+  if (cfg.showTalked) headers.push('Owner', 'Activity Time');
+  if (cfg.showNotes) headers.push('Notes');
+
+  const lines = [headers.join('\t')];
+  leads.forEach((lead, idx) => {
+    const displayType = lead.leadType && lead.leadType !== 'Creator' ? lead.leadType : '';
+    const dt = getTalkedDate(lead) || getActivityDate(lead);
+    const dtStr = dt ? dt.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    const owner = lead.lastTalkedByName || lead.lastUpdatedByName || lead.createdByName || '';
+
+    const row = [idx + 1, clean(lead.name)];
+    if (cfg.showPhone) row.push(clean(lead.phone));
+    if (cfg.showEmail) row.push(clean(lead.email));
+    if (cfg.showCategory) row.push(clean(displayType), clean(lead.category), clean(lead.budget));
+    if (cfg.showCity) row.push(clean(lead.city), clean(lead.handle));
+    if (cfg.showStatus) row.push(clean(getLeadStatus(lead)));
+    if (cfg.showTalked) row.push(clean(owner), clean(dtStr));
+    if (cfg.showNotes) row.push(clean(lead.notes));
+    lines.push(row.join('\t'));
+  });
+
+  try {
+    await navigator.clipboard.writeText(lines.join('\n'));
+    showToast(`Copied ${leads.length} rows — paste straight into Excel or Sheets!`, 'var(--green)');
+  } catch {
+    showToast('Could not copy table for Excel', 'var(--orange)');
+  }
+}
+
 // Make functions globally available
 window.showScreen = showScreen;
 window.showToast = showToast;
@@ -1592,5 +1923,10 @@ window.shareRosterEmail = shareRosterEmail;
 window.nativeShareRoster = nativeShareRoster;
 window.exportRosterCSV = exportRosterCSV;
 window.printRoster = printRoster;
+window.setDbViewMode = setDbViewMode;
+window.updateExcelCell = updateExcelCell;
+window.exportRosterExcel = exportRosterExcel;
+window.exportFilteredExcel = exportFilteredExcel;
+window.copyRosterTSV = copyRosterTSV;
 
 console.log('✅ Fameo CRM initialized');
