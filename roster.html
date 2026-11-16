@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fameo Roster — Shared Client Sheet</title>
+<link rel="icon" type="image/svg+xml" href="https://fameomedia.vercel.app/img/fameo-logo.svg?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="fameo-theme.css">
+<script type="module" src="firebase-config.js"></script>
+<script type="module" src="roster-view.js"></script>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="studio-strip">
+  <span>Fameo · Shared Client Sheet (Read-Only)</span>
+  <span class="hide-mobile">Guwahati, Assam · 26.14° N · Northeast → Pan India</span>
+  <a href="https://fameomedia.vercel.app/" target="_blank" rel="noopener">fameomedia.vercel.app ↗</a>
+</div>
+
+<header id="appHeader">
+  <a href="app.html" class="fameo-logo" aria-label="Fameo CRM">
+    <img
+      class="fameo-brand-logo"
+      src="https://fameomedia.vercel.app/img/fameo-logo.svg?v=2"
+      alt="Fameo"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"
+    >
+    <span class="fameo-logo-fallback">
+      <svg class="fameo-logo-mark" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="1" y="1" width="34" height="34" rx="9" fill="#141413"/>
+        <path d="M13 26V13.8C13 11.4 14.5 10 17.1 10H23.2" stroke="#FAF8F3" stroke-width="2.1" stroke-linecap="round"/>
+        <path d="M10.8 18.2H20.8" stroke="#FAF8F3" stroke-width="2.1" stroke-linecap="round"/>
+        <circle cx="25.5" cy="24.5" r="3" fill="#C84B31"/>
+      </svg>
+      <span class="fameo-wordmark">Fameo</span>
+    </span>
+    <span class="fameo-crm-tag">SHEET</span>
+  </a>
+
+  <div class="header-right">
+    <span class="badge badge-sentdemo">View Only</span>
+    <a class="btn btn-ghost btn-sm" href="app.html">Open CRM ↗</a>
+  </div>
+</header>
+
+<main class="page active" id="page-roster" style="max-width:1180px;">
+  <div class="page-head">
+    <div>
+      <div class="eyebrow"><span class="eyebrow-dot"></span>Shared Sheet · <span id="sharedMetaDate">—</span></div>
+      <h1 class="editorial-title" id="sharedSheetTitle" style="margin-top:8px;">Loading <em>roster…</em></h1>
+      <p class="page-sub" id="sharedSheetNote" style="display:none;"></p>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary btn-sm" type="button" onclick="copyCurrentSheetLink()">📋 Copy Link</button>
+      <button class="btn btn-green btn-sm" type="button" onclick="downloadSharedExcel()">📊 Download Excel (.xls) ↓</button>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="downloadSharedCSV()">Export CSV ↓</button>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="window.print()">🖨 Print / PDF</button>
+    </div>
+  </div>
+
+  <!-- Optional Sign-In Gate (only shown if Firestore team link requires login) -->
+  <div class="roster-controls-card" id="sharedAuthPrompt" style="display:none;text-align:center;">
+    <div class="eyebrow" style="margin-bottom:8px;"><span class="eyebrow-dot"></span>Team Restricted Sheet</div>
+    <h2 class="form-title" style="margin-bottom:8px;">Sign in with your Fameo Google account to view this sheet</h2>
+    <p style="font-size:0.86rem;color:var(--text-dim);margin-bottom:18px;">This roster was shared as a Team Cloud link.</p>
+    <button class="btn btn-primary" id="sharedGoogleSignInBtn" type="button">Continue with Google ↗</button>
+  </div>
+
+  <div id="sharedSheetControls" style="display:none;">
+    <div class="db-filters" style="margin-bottom:16px;">
+      <div class="db-filters-top" style="justify-content:space-between;">
+        <input class="filter-input" id="sharedSearch" placeholder="Search rows by client name, Instagram ID, phone, email, city, status, or notes…" oninput="renderSharedSheet()">
+        <span class="results-meta-bar" id="sharedRowCount" style="margin-bottom:0;">0 clients</span>
+      </div>
+    </div>
+
+    <div id="sharedExcelWrap"></div>
+  </div>
+</main>
+
+<footer class="studio-footer" style="max-width:1180px;">
+  <span style="display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <img
+      class="fameo-brand-logo-sm"
+      src="https://fameomedia.vercel.app/img/fameo-logo.svg?v=2"
+      alt="Fameo"
+      onerror="this.style.display='none';"
+    >
+    <span>Studio Sheet — <em>Influence, composed.</em></span>
+  </span>
+  <div class="studio-footer-links">
+    <a href="mailto:fameomedia@gmail.com">fameomedia@gmail.com ↗</a>
+    <a href="tel:+916003909707">+91 60039 09707</a>
+    <a href="https://fameomedia.vercel.app/" target="_blank" rel="noopener">fameomedia.vercel.app ↗</a>
+  </div>
+</footer>
+
+</body>
+</html>
