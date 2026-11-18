@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unilever Leads — Excel Sheet</title>
+<link rel="stylesheet" href="../fameo-theme.css">
+<style>
+  body { margin:0; background:#F4F0E8; color:#141413;
+         font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif; }
+  .page { max-width:1500px; margin:0 auto; padding:18px 22px 56px; }
+  .strip { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+           font-family:'JetBrains Mono',monospace; font-size:.68rem; letter-spacing:.05em;
+           text-transform:uppercase; color:#787268; border-bottom:1px solid rgba(20,20,19,.14);
+           padding-bottom:10px; }
+  .hero { display:flex; justify-content:space-between; align-items:flex-end; gap:20px;
+          flex-wrap:wrap; margin:26px 0 18px; }
+  .eyebrow { font-family:'JetBrains Mono',monospace; font-size:.68rem; letter-spacing:.12em;
+             text-transform:uppercase; color:#C84B31; font-weight:600; }
+  h1 { font-family:'Instrument Serif',Georgia,serif; font-weight:400; font-size:2.9rem;
+       line-height:1.05; margin:8px 0 6px; }
+  h1 em { color:#C84B31; font-style:italic; }
+  .sub { color:#4A4742; font-size:.86rem; max-width:640px; margin:0; line-height:1.55; }
+  .actions { display:flex; gap:9px; flex-wrap:wrap; }
+  .btn { display:inline-flex; align-items:center; gap:7px; text-decoration:none;
+         border-radius:8px; padding:10px 16px; font-size:.8rem; font-weight:600;
+         border:1px solid #141413; transition:transform .12s, background .12s; }
+  .btn:hover { transform:translateY(-1px); }
+  .btn.primary { background:#141413; color:#FAF8F3; }
+  .btn.ghost { background:transparent; color:#141413; }
+  .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+             gap:10px; margin:0 0 18px; }
+  .metric { background:#FAF8F3; border:1px solid rgba(20,20,19,.13); border-radius:10px;
+            padding:12px 15px; }
+  .metric span { display:block; font-size:.68rem; text-transform:uppercase;
+                 letter-spacing:.07em; color:#787268; font-weight:600; }
+  .metric b { display:block; margin-top:5px; font-family:'JetBrains Mono',monospace;
+              font-size:1.4rem; color:#144A2B; }
+  .excel-toolbar input { font-family:'JetBrains Mono',monospace; font-size:.74rem;
+      padding:7px 10px; border:1px solid #B7DEC8; border-radius:6px; min-width:210px;
+      background:#fff; outline:none; }
+  .excel-toolbar input:focus { border-color:#1D6F42; box-shadow:0 0 0 2px rgba(29,111,66,.12); }
+  #visibleCount { white-space:nowrap; font-weight:600; }
+  .excel-cell.wide { min-width:340px; max-width:430px; white-space:normal; line-height:1.4; }
+  .excel-cell.name { font-weight:600; min-width:170px; }
+  .excel-cell.mono { font-family:'JetBrains Mono',monospace; font-size:.74rem; min-width:210px; }
+  .excel-cell.blank { color:#A6ADA4; }
+  .excel-cell.masked { background:#FFF0E2 !important; color:#9A5B2C; font-style:italic; }
+  .excel-cell.selected { outline:2px solid #1D6F42; outline-offset:-2px; }
+  .excel-table td a.email { color:#144A2B; text-decoration:none; border-bottom:1px dotted #144A2B; }
+  .excel-table td a.email:hover { color:#C84B31; border-color:#C84B31; }
+  .note { margin-top:16px; font-size:.76rem; line-height:1.6; color:#787268; max-width:900px; }
+  .note strong { color:#141413; }
+  @media (max-width:640px) { h1 { font-size:2.1rem; } .page { padding:14px 12px 40px; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="strip"><span>Fameo LeadsCRM · Lead Database</span><span>Unilever / Brand &amp; Marketing · 18 Nov 2026</span></div>
+
+  <div class="hero">
+    <div>
+      <div class="eyebrow"><span style="color:#C84B31">●</span> 02 — Lead Database / Excel Sheet</div>
+      <h1>Unilever <em>Lead Sheet</em></h1>
+      <p class="sub">20 brand &amp; marketing contacts, cleaned from the pasted lead export. Filter below, or use the buttons to download the Excel workbook, the PDF, or the CSV. All three contain the same 20 leads.</p>
+    </div>
+    <div class="actions">
+      <a class="btn primary" href="Unilever_Brand_Marketing_Leads.xlsx" download>↓ Excel (.xlsx)</a>
+      <a class="btn primary" href="Unilever_Brand_Marketing_Leads.pdf" download style="background:#C84B31;border-color:#C84B31">↓ PDF</a>
+      <a class="btn ghost" href="Unilever_Brand_Marketing_Leads.csv" download>↓ CSV</a>
+      <a class="btn ghost" href="Unilever_Brand_Marketing_Leads.pdf?inline=1" target="_blank" rel="noopener" style="font-size:.72rem">Preview PDF ↗</a>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric"><span>Total leads</span><b>20</b></div>
+    <div class="metric"><span>Work emails</span><b>19</b></div>
+    <div class="metric"><span>Personal emails</span><b>15</b></div>
+    <div class="metric"><span>Masked phones</span><b>5</b></div>
+  </div>
+
+  <div class="excel-wrap">
+    <div class="excel-toolbar">
+      <div class="excel-fx-bar"><span class="excel-fx-tag">fx</span><span id="fx">Click any cell to inspect its value</span></div>
+      <input id="search" type="search" placeholder="Filter leads (name, title, email…)">
+      <span id="visibleCount">20 / 20 rows</span>
+    </div>
+    <table class="excel-table">
+      <thead>
+        <tr class="excel-col-letters"><th class="excel-row-num"></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th></tr>
+        <tr class="excel-headers"><th class="excel-row-num">#</th><th>Full Name</th><th>Title / Headline</th><th>Company</th><th>Company Size</th><th>Work Email</th><th>Personal Email</th><th>Phone Number</th></tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+      <tfoot><tr class="excel-footer-row"><td class="excel-row-num">Σ</td><td colspan="7" id="footerText"></td></tr></tfoot>
+    </table>
+  </div>
+
+  <p class="note"><strong>Reading the sheet:</strong> a blank cell means the source did not supply that field. Amber cells are values the source had already masked (for example <code>+91 91•••Masked</code> or <code>Masked@live.com</code>) and are not complete contact details. The workbook also contains a <strong>Summary</strong>, a <strong>CRM Import</strong> sheet shaped like this app's CSV export, and a <strong>Read Me</strong> explaining how the mangled mailto links were reconstructed. Verify addresses before outreach.</p>
+</div>
+
+<script>
+const HEADERS = ["Full Name", "Title / Headline", "Company", "Company Size", "Work Email", "Personal Email", "Phone Number"];
+const LEADS = [["Ranjani Krishnaswamy", "Chief Marketing Officer", "Titan Company Limited / Unilever", "10001+ employees", "ranjani.krishnaswamy@unilever.com", "ranjani2010@gmail.com", ""], ["Madhavi Maruwada", "Brand Management @ Unilever | Digital Marketing, Communications & Strategy | Ex- TATA, Tesco", "Unilever", "10001+ employees", "madhavi.maruwada@unilever.com", "madhavi.hsm@gmail.com", ""], ["Khushi Shah", "Marketing @ Unilever Brand Management | Growth Strategy", "Unilever", "10001+ employees", "khushi.shah@unilever.com", "", ""], ["Dhruvil Patel", "Brand Management at Unilever", "Unilever", "10001+ employees", "dhruvil.patel@unilever.com", "dhruvil87@gmail.com", ""], ["Preksha Chhajer", "Preksha Photography | PrekshaClicks", "Unilever", "N/A", "preksha.chhajer@unilever.com", "prekshachhajer@yahoo.com", ""], ["Paresh Lokhande", "Brand Building at Hindustan Unilever Limited", "Unilever", "10001+ employees", "paresh@unilever.com", "paresh.lokhande@gmail.com", ""], ["Keha Sagar Gupta", "Brand Management | FMCG Marketing Specialist | Beauty, Personal Care & Packaged Foods", "Unilever", "10001+ employees", "keha.sagar@unilever.com", "kehasagar1@gmail.com", ""], ["Anupama Saikia", "Chief Marketing Officer | Unilever | UNICEF | Growing Brands with Purpose", "Unilever", "51 - 200 employees", "anupama.saikia@unilever.com", "", ""], ["Jharna Gajwani", "Senior Brand Manager, Unilever", "Unilever", "10001+ employees", "jharna@unilever.com", "jharna.gajwani@gmail.com", ""], ["Raisa Chakravarty", "Senior Brand Manager at Hindustan Unilever Limited", "Unilever", "10001+ employees", "raisa.chakravarty@unilever.com", "raisachakravarty@gmail.com", "+91 91•••Masked"], ["Vidisha Garg", "Senior Brand Manager - Lakme", "Unilever", "10001+ employees", "vidisha.garg@unilever.com", "vidishagarg5@gmail.com", ""], ["Anil Kulkarni", "Strategy & Leadership Coach", "Unilever", "N/A", "anil@unilever.com", "1593.kulkarni@gmail.com", "+91 98•••Masked"], ["Navashree Bharadwaj", "Senior Brand Manager | Unilever", "Unilever", "10001+ employees", "navashree.bharadwaj@unilever.com", "navashreeb@gmail.com", ""], ["Maulik Mehta", "Senior Brand Manager at Unilever", "Unilever", "10001+ employees", "", "Masked@live.com", "+91 98•••Masked"], ["Aneri Shah", "Sr. Brand Manager at Unilever | Ex-Nykaa", "Unilever", "10001+ employees", "aneri.shah@unilever.com", "", ""], ["Chandran Dharmarajan", "CEO, Vintegra | Strategy Consulting, Brand Identity | Brand Strategy Execution", "Unilever", "10001+ employees", "chandran@unilever.com", "chandran.dharmarajan@gmail.com", "+91 91•••Masked"], ["Hemank Mehta", "Senior Brand Manager at Unilever", "Unilever", "10001+ employees", "hemank.mehta@unilever.com", "mehtahemank@gmail.com", "+91 99•••Masked"], ["Mihir Joshi", "FMCG, Product and Growth || Unilever || BurnCal", "Unilever", "10001+ employees", "mihir.joshi@unilever.com", "joshimihir2007@gmail.com", ""], ["Vipul Chaturvedi", "Senior Brand Manager at Hindustan Unilever Ltd", "Unilever", "10001+ employees", "vipul@unilever.com", "vipulbhu@yahoo.com", ""], ["Shardul Gayal", "Global Brand Management at HUL Ex - Star Network | Ex - Percept Group | Ex - Marching Ants", "Unilever", "10001+ employees", "shardul.gayal@unilever.com", "", ""]];
+const COLS = ['A','B','C','D','E','F','G'];
+const tbody = document.getElementById('tbody');
+const search = document.getElementById('search');
+const fx = document.getElementById('fx');
+
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const masked = (v) => typeof v === 'string' && (v.toLowerCase().includes('masked') || v.includes('•••'));
+
+function render() {
+  const q = search.value.trim().toLowerCase();
+  const rows = LEADS.map((lead, i) => ({lead, i}))
+                    .filter(({lead}) => !q || lead.join(' ').toLowerCase().includes(q));
+  tbody.innerHTML = rows.map(({lead, i}) => {
+    const rowNum = i + 2;
+    const cells = lead.map((v, ci) => {
+      const ref = COLS[ci] + rowNum;
+      const cls = ['excel-cell'];
+      if (ci === 1) cls.push('wide');
+      if (ci === 0) cls.push('name');
+      if (ci >= 4) cls.push('mono');
+      if (!v) cls.push('blank');
+      if (v && masked(v)) cls.push('masked');
+      let inner;
+      if (!v) inner = '—';
+      else if ((ci === 4 || ci === 5) && !masked(v)) inner = '<a class="email" href="mailto:' + esc(v) + '">' + esc(v) + '</a>';
+      else inner = esc(v);
+      return '<td class="' + cls.join(' ') + '" data-ref="' + ref + '" data-val="' + esc(v) + '">' + inner + '</td>';
+    }).join('');
+    return '<tr><td class="excel-row-num">' + (i + 1) + '</td>' + cells + '</tr>';
+  }).join('');
+  document.getElementById('visibleCount').textContent = rows.length + ' / ' + LEADS.length + ' rows';
+  document.getElementById('footerText').textContent = rows.length + ' of ' + LEADS.length + ' leads shown  ·  ' +
+    LEADS.filter(l => l[4] && l[5] && !masked(l[5])).length + ' with both work and personal email';
+}
+tbody.addEventListener('click', (e) => {
+  const td = e.target.closest('td[data-ref]');
+  if (!td) return;
+  tbody.querySelectorAll('td.selected').forEach(c => c.classList.remove('selected'));
+  td.classList.add('selected');
+  fx.textContent = td.dataset.ref + '  ·  ' + (td.dataset.val || '(empty)');
+});
+search.addEventListener('input', render);
+render();
+</script>
+</body>
+</html>
